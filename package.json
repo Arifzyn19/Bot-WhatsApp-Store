@@ -1,0 +1,27 @@
+{
+  "name": "base-case",
+  "version": "1.0.0",
+  "description": "base bot case",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "pm2": "pm2 start index.js --name bot",
+    "restart:pm2": "pm2 restart bot",
+    "stop:pm2": "pm2 stop bot"
+  },
+  "keywords": [
+    "autoreadsw",
+    "baileys"
+  ],
+  "author": "Dika Ardnt.",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "dotenv": "^16.3.1",
+    "file-type": "latest",
+    "fluent-ffmpeg": "^2.1.2",
+    "node-webpmux": "^3.1.9",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

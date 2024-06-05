@@ -404,6 +404,9 @@ export default async function serialize(hisoka, msg, store) {
 
   m.reply = async (text, options = {}) => {
     if (typeof text === "string") {
+      if (!!config.msg[text]) {
+        text = config.msg[text];
+      }
       return await hisoka.sendMessage(
         m.from,
         { text, ...options },

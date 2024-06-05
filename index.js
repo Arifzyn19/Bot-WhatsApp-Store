@@ -200,6 +200,23 @@ const startSock = async () => {
               admin: null,
             })),
           );
+
+          for (const jid of participants) {
+            client.sendMessage(
+              jid,
+              {
+                text: `🌷いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠) 
+
+⌗ ┆ketik "list" untuk melihat list
+⌗ ┆grup mabar dan topup
+⌗ ┆dilarang chat/kirim stiker 18+ 
+⌗ ┆ada pertanyaan? silahkan tag/pc admin
+
+≿━━━━༺❀༻━━━━༺❀༻━━━━≾`,
+              },
+              { quoted: m },
+            );
+          }
           break;
         case "demote":
         case "promote":

@@ -291,6 +291,32 @@ export default async function serialize(hisoka, msg, store) {
       m.msg?.title ||
       m.msg?.name ||
       "";
+    // respon btn
+    if (m.type === "interactiveResponseMessage") {
+      let msg = m.message[m.type] || m.msg;
+      if (msg.nativeFlowResponseMessage && !m.isBot) {
+        let { id } = JSON.parse(msg.nativeFlowResponseMessage.paramsJson) || {};
+        if (id) {
+          let emit_msg = {
+            key: {
+              ...m.key,
+            },
+            message: {
+              extendedTextMessage: {
+                text: id,
+              },
+            },
+            pushName: m.pushName,
+            messageTimestamp: m.messageTimestamp || 754785898978,
+          };
+          return hisoka.ev.emit("messages.upsert", {
+            messages: [emit_msg],
+            type: "notify",
+          });
+        }
+      }
+    }
+    
     m.prefix = new RegExp("^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]", "gi").test(
       m.body,
     )

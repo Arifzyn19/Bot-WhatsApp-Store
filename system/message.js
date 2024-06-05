@@ -94,6 +94,33 @@ export default async function message(client, store, m) {
     const more = String.fromCharCode(8206);
     const readMore = more.repeat(4001);
 
+    const fkontak = {
+      key: {
+        fromMe: false,
+        participant: `0@s.whatsapp.net`,
+        ...(m.from ? { remoteJid: `status@broadcast` } : {}),
+      },
+      message: {
+        contactMessage: {
+          displayName: `${m.pushName}`,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;a,;;;\nFN:${m.pushName}\nitem1.TEL;waid=${m.sender.split("@")[0]}:${m.sender.split("@")[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`,
+        },
+      },
+    };
+
+    const ftextt = {
+      key: {
+        participant: "0@s.whatsapp.net",
+        ...(m.from ? { remoteJid: `0@s.whatsapp.net` } : {}),
+      },
+      message: {
+        extendedTextMessage: {
+          text: "_Fairy Moon - WhatsApp Bot_",
+          title: "",
+        },
+      },
+    };
+    
     // command
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
@@ -120,9 +147,26 @@ export default async function message(client, store, m) {
 
             teks += `\n\n${config.wm}`;
 
-            m.reply(teks, {
-              mentions: [m.sender],
-            });
+            await client.sendMessage(
+              m.from,
+              {
+                text: teks,
+                contextInfo: {
+                  mentionedJid: client.parseMention(teks),
+                  externalAdReply: {
+                    showAdAttribution: true,
+                    title: "Selamat datang...",
+                    body: config.wm,
+                    thumbnailUrl:
+                      "https://telegra.ph/file/2d0dfe9003e8c012b1ffe.jpg",
+                    sourceUrl: "",
+                    mediaType: 1,
+                    renderLargerThumbnail: true,
+                  },
+                },
+              },
+              { quoted: ftextt },
+            );
           } else {
             const sections = [
               {
@@ -393,6 +437,52 @@ export default async function message(client, store, m) {
           });
         }
         break;
+      default: 
+        if (
+          [">", "eval", "=>"].some((a) =>
+            m.command.toLowerCase().startsWith(a),
+          ) &&
+          m.isOwner
+        ) {
+          let evalCmd = "";
+          try {
+            evalCmd = /await/i.test(m.text)
+              ? eval("(async() => { " + m.text + " })()")
+              : eval(m.text);
+          } catch (e) {
+            evalCmd = e;
+          }
+          new Promise(async (resolve, reject) => {
+            try {
+              resolve(evalCmd);
+            } catch (err) {
+              reject(err);
+            }
+          })
+            ?.then((res) => m.reply(util.format(res)))
+            ?.catch((err) => {
+              let text = util.format(err);
+              m.reply(text);
+            });
+        }
+
+        // exec
+        if (
+          ["$", "exec"].some((a) => m.command.toLowerCase().startsWith(a)) &&
+          m.isOwner
+        ) {
+          let o;
+
+          try {
+            o = await exec(m.text);
+          } catch (e) {
+            o = e;
+          } finally {
+            let { stdout, stderr } = o;
+            if (typeof stdout === "string" && stdout.trim()) m.reply(stdout);
+            if (typeof stderr === "string" && stderr.trim()) m.reply(stderr);
+          }
+        }
     }
   } catch (err) {
     await m.reply(util.format(err));

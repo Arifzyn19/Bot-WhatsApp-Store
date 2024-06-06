@@ -316,7 +316,7 @@ export default async function serialize(hisoka, msg, store) {
         }
       }
     }
-    
+
     m.prefix = new RegExp("^[°•π÷×¶∆£¢€¥®™+✓=|/~!?@#%^&.©^]", "gi").test(
       m.body,
     )

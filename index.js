@@ -188,52 +188,10 @@ const startSock = async () => {
   });
 
   // merubah status member
-  client.ev.on("group-participants.update", ({ id, participants, action }) => {
-    const metadata = store.groupMetadata[id];
-    if (metadata) {
-      switch (action) {
-        case "add":
-        case "revoked_membership_requests":
-          metadata.participants.push(
-            ...participants.map((id) => ({
-              id: jidNormalizedUser(id),
-              admin: null,
-            })),
-          );
-
-          for (const jid of participants) {
-            client.sendMessage(
-              jid,
-              {
-                text: `🌷いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠) 
-
-⌗ ┆ketik "list" untuk melihat list
-⌗ ┆grup mabar dan topup
-⌗ ┆dilarang chat/kirim stiker 18+ 
-⌗ ┆ada pertanyaan? silahkan tag/pc admin
-
-≿━━━━༺❀༻━━━━༺❀༻━━━━≾`,
-              },
-              { quoted: m },
-            );
-          }
-          break;
-        case "demote":
-        case "promote":
-          for (const participant of metadata.participants) {
-            let id = jidNormalizedUser(participant.id);
-            if (participants.includes(id)) {
-              participant.admin = action === "promote" ? "admin" : null;
-            }
-          }
-          break;
-        case "remove":
-          metadata.participants = metadata.participants.filter(
-            (p) => !participants.includes(jidNormalizedUser(p.id)),
-          );
-          break;
-      }
-    }
+  client.ev.on("group-participants.update", async (message) => {
+    await (
+      await import(`./system/event/group-update.js?v=${Date.now()}`)
+    ).default(client, message);
   });
 
   // bagian pepmbaca status ono ng kene

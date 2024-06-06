@@ -8,6 +8,8 @@ import * as Func from "./lib/function.js";
 import Color from "./lib/color.js";
 import serialize, { getContentType } from "./lib/serialize.js";
 
+import { ai } from "./scraper/ai.js";
+
 import { fileURLToPath } from "url";
 import path, { dirname, join } from "path";
 import fs from "fs";
@@ -120,7 +122,7 @@ export default async function message(client, store, m) {
         },
       },
     };
-    
+
     // command
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
@@ -185,6 +187,34 @@ export default async function message(client, store, m) {
         }
         break;
 
+      case "hd":
+      case "remini":
+        {
+          if (/image/i.test(quoted.msg.mimetype)) {
+            await m.reply("[!] _Processing Your images..._");
+            try {
+              const response = await ai.upscale(await downloadM(), "enhance");
+
+              await client.sendMessage(
+                m.from,
+                {
+                  image: response,
+                  caption: config.wm,
+                  mimetype: "image/jpeg",
+                },
+                {
+                  quoted: m,
+                },
+              );
+            } catch (e) {
+              throw "Error processing your images: " + e.message; // Menambahkan pesan kesalahan dari error
+            }
+          } else {
+            m.reply(`Reply/send image with caption *${m.prefix + m.command}*`);
+          }
+        }
+        break;
+
       // group menu
       case "hidetag":
       case "ht":
@@ -226,9 +256,13 @@ export default async function message(client, store, m) {
           await client.groupSettingUpdate(m.from, isClose);
 
           if (m.args[0] === "close") {
-            await m.reply("𝑪𝒍𝒐𝒔𝒆\n\n𝗀𝗋υρ ᑯ𝗂 𝗍υ𝗍υρ 🔐 ﮩ٨ـﮩﮩ٨ـ");
+            await m.reply(
+              "𝑪𝒍𝒐𝒔𝒆 𝗀𝗋υρ ᑯ𝗂 𝗍υ𝗍υρ 🔐 ﮩ٨ـﮩﮩ٨ـ\nありがとうございます , おやすみなさい\nArigatōgozaimasu, oyasuminasai\n𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉 , 𝒔𝒆𝒍𝒂𝒎𝒂𝒕 𝒎𝒂𝒍𝒂𝒎 (⁠◍⁠•⁠ᴗ⁠•⁠◍⁠)⁠❤",
+            );
           } else if (m.args[0] === "open") {
-            await m.reply("𝑶𝒑𝒆𝒏\n\n𝗀𝗋υρ ᑯ𝗂 ᑲυ𝗄α 🔓🔑 ﮩ٨ـﮩﮩ٨ـ");
+            await m.reply(
+              "𝑶𝒑𝒆𝒏 𝗀𝗋υρ ᑯ𝗂 ᑲυ𝗄α 🔓🔑 ﮩ٨ـﮩﮩ٨ـ\nおはよう ございます\nohayōgozaimasu\n𝐬𝐞𝐥𝐚𝐦𝐚𝐭 𝐩𝐚𝐠𝐢 (⁠>⁠▽⁠<⁠)",
+            );
           }
         }
         break;
@@ -316,7 +350,7 @@ export default async function message(client, store, m) {
               rows: arr_rows,
             },
           ];
-          await client.sendListM(m.from, teks, wm, null, sections, m, {
+          await client.sendListM(m.from, teks, config.wm, null, sections, m, {
             contextInfo: {
               mentionedJid: [m.sender],
             },
@@ -351,7 +385,7 @@ export default async function message(client, store, m) {
               args1,
               args2,
               true,
-              url_media,
+              "https://telegra.ph" + url_media,
               db_respon_list,
             );
             m.reply(`Berhasil menambah List menu : *${args1}*`);
@@ -404,7 +438,7 @@ export default async function message(client, store, m) {
               args1,
               args2,
               true,
-              url_media,
+              "https://telegra.ph" + url_media,
               db_respon_list,
             );
             m.reply(`Sukses update respon list dengan key *${args1}*`);
@@ -422,22 +456,23 @@ export default async function message(client, store, m) {
 
         const who = m.quoted
           ? m.quoted.sender
-          : m.mentions && m.mentions[0]
+          : m.mentions && m.mentions.length > 0
             ? m.mentions[0]
             : "";
 
         if (m.command == "done") {
           m.reply(
-            `𝑫𝑶𝑵𝑬 𝗄α @${who.split("@")[0]} 𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𐓣𝗒α 𝗄α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)`,
+            "𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α, \nお待ちください Omachikudasai\n𝒅𝒊𝒕𝒖𝒏𝒈𝒈𝒖 𝒚𝒂 (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)",
             { mentions: [who] },
           );
         } else {
-          m.reply(`𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α @${who.split("@")[0]} ᑯ𝗂𝗍υ𐓣𝗀𝗀υ 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)`, {
-            mentions: [who],
-          });
+          m.reply(
+            "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
+            { mentions: [who] },
+          );
         }
         break;
-      default: 
+      default:
         if (
           [">", "eval", "=>"].some((a) =>
             m.command.toLowerCase().startsWith(a),

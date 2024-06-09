@@ -22,6 +22,7 @@ export default async function GroupParticipants(
       if (action == "add") {
         client.sendMessage(id, {
           text: `🌷 いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠) 
+@${jid.split("@")[0]} 
 
 ⌗ ┆ketik .shop untuk melihat list
 ⌗ ┆grup mabar dan topup
@@ -29,6 +30,9 @@ export default async function GroupParticipants(
 ⌗ ┆ada pertanyaan? silahkan tag/pc admin
 
 ≿━━━━༺❀༻━━━━༺❀༻━━━━≾`,
+          contextInfo: {
+            mentionedJid: [jid],
+          },
         });
       } else if (action == "remove") {
         if (!db.groups[id]?.leave) return;

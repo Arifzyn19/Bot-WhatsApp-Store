@@ -1,4 +1,5 @@
 import config from "../config.js";
+// import app from "./lib/server.js";
 
 import { delay, jidNormalizedUser } from "@whiskeysockets/baileys";
 import util from "util";
@@ -27,6 +28,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+let conn = null;
+
 /**
  *
  * @param {import('@whiskeysockets/baileys').WASocket} hisoka
@@ -42,6 +45,8 @@ export default async function message(client, store, m) {
 
     // mengabaikan pesan dari bot
     if (m.isBot) return;
+
+    conn = client;
 
     // memunculkan ke log
     if (m.message && !m.isBot) {
@@ -63,6 +68,8 @@ export default async function message(client, store, m) {
         Color.greenBright(m.body || m.type),
       );
     }
+
+    if (!m.isGroup && !m.isOwner) return;
 
     // database JSON
     const db_respon_list = JSON.parse(
@@ -520,7 +527,7 @@ export default async function message(client, store, m) {
         }
     }
   } catch (err) {
-    await m.reply(util.format(err));
+    console.error(err);
   }
 }
 

@@ -1,6 +1,7 @@
-// /:index.js
+// /root/base/index.js
 
 import config from "./config.js";
+// import app from "./system/message.js";
 
 const {
   default: makeWASocket,
@@ -20,6 +21,11 @@ import { Boom } from "@hapi/boom";
 import fs from "fs";
 import os from "os";
 import { exec } from "child_process";
+import util from "util";
+
+import express from "express";
+import bodyParser from "body-parser";
+const app = express();
 
 import treeKill from "./system/lib/tree-kill.js";
 import serialize, { Client } from "./system/lib/serialize.js";
@@ -212,8 +218,37 @@ const startSock = async () => {
     ).default(client, store, m);
   });
 
+  app.use(express.json());
+  app.use(bodyParser.json());
+  app.get(`/`, function (req, res) {
+    res.status(200).send(`OK`);
+  });
+
+  app.post("/webhook", (req, res) => {
+    try {
+      const data = req.body;
+
+      if (client) {
+        client.sendMessage("6288213503541@s.whatsapp.net", {
+          text: util.format(data),
+        });
+      } else {
+        console.error("Connection is not initialized");
+      }
+
+      res.status(200).send("Webhook received");
+    } catch (error) {
+      console.error("Error handling webhook:", error);
+      res.status(500).send("Internal server error");
+    }
+  });
+
   process.on("uncaughtException", console.error);
   process.on("unhandledRejection", console.error);
 };
 
+const PORT = process.env.PORT || 1912;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
 startSock();

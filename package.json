@@ -18,7 +18,9 @@
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
+    "express": "^4.19.2",
     "file-type": "latest",
     "fluent-ffmpeg": "^2.1.2",
     "node-webpmux": "^3.1.9",

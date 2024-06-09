@@ -14,6 +14,7 @@ import { ai } from "./scraper/ai.js";
 import { fileURLToPath } from "url";
 import path, { dirname, join } from "path";
 import fs from "fs";
+import QRCode from 'qrcode';
 
 import {
   addResponList,
@@ -24,11 +25,16 @@ import {
   updateResponList,
   getDataResponList,
 } from "./lib/store.js";
+import MaupediaAPI from "./lib/MaupediaAPI.js";
+const maupediaAPI = new MaupediaAPI(config.gateway.apikey, config.gateway.apiId, config.gateway.secretKey);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-let conn = null;
+import Database from 'simple-json-db';
+
+const db = new Database(path.join(__dirname, 'database', 'database.json'));
+const db_deposit = new Database(path.join(__dirname, 'database', 'db_deposit.json'));
 
 /**
  *
@@ -45,9 +51,7 @@ export default async function message(client, store, m) {
 
     // mengabaikan pesan dari bot
     if (m.isBot) return;
-
-    conn = client;
-
+    
     // memunculkan ke log
     if (m.message && !m.isBot) {
       console.log(
@@ -477,6 +481,55 @@ export default async function message(client, store, m) {
             "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
             { mentions: [who] },
           );
+        }
+        break;
+        
+      case "deposit": {
+      	  if (!m.isOwner) return;
+      	  
+            const userDeposits = db_deposit.get(m.sender) || [];
+
+            const jumlah_nya = m.args[0];
+            if (isNaN(jumlah_nya)) {
+            	return m.reply("Format harus berupa angka.")
+            }
+            
+            if (!jumlah_nya) {
+                return m.reply(`Format Salah\n\nContoh : deposit 1500`);
+            }
+            
+            const pajak = 0.003 * Math.random() * (5 - 1.5) + 1.5;
+            const pajak_amount = parseInt((parseFloat(jumlah_nya) * pajak) / 100);
+            const totalPembayaran = parseInt(parseFloat(jumlah_nya)) + pajak_amount;
+ 
+            const response = await maupediaAPI.deposit("nq", totalPembayaran);
+            
+            if (!response.result) {
+                return m.reply(util.format(response));
+            }
+
+            const depositData = {
+                deposit: totalPembayaran,
+                pajak: pajak,
+                total_pembayaran: totalPembayaran.toFixed(2),
+                status: false,
+                tanggal_deposit: new Date().toLocaleDateString("ID", { timeZone: "Asia/Jakarta" }),
+                ...response.data
+            };
+
+            userDeposits.push(depositData);
+            db_deposit.set(m.sender, userDeposits);
+
+            let teks = `「 𝙆𝙊𝙉𝙁𝙄𝙍𝙈𝘼𝙎𝙄-𝘿𝙀𝙋𝙊𝙎𝙄𝙏 」\n\n`;
+            for (let key of Object.keys(response.data).filter(v => !/pay_url|checkout_url|qr_url|qr_string/i.test(v))) {
+                teks += `》 ${key.replace(/_/g, ' ').toUpperCase()} : ${response.data[key]}\n`;
+            }
+
+            teks += `\n*Silahkan Scan Qris Di Atas Sesuai Nominal Jika Sudah Transfer Harap tunggu!*`;
+
+            const qrImage = await QRCode.toDataURL(response.data.qr_string);
+            
+            await client.sendUrlImg(m.sender, qrImage, teks, "atau Click Di bawah untuk membayar.", [["Pay URL", `${response.data.pay_url}`]], m)
         }
         break;
       default:

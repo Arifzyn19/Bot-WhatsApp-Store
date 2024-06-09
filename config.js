@@ -12,6 +12,12 @@ const config = {
   wm: "Fairy Moon © 2023",
 
   self: false,
+  
+  gateway: {
+    apikey: "dDTLWx3AKrXdDeZ71Wcgr5cnmY3V0qm6oRmcNKR0pRD9FPAOaSWSlg5nylHQYLUb",
+    apiId: "Xl24K1LojQEaSMtO",
+    secretKey: "Arifzyn19",
+  },
 
   msg: {
     owner: "Features can only be accessed owner!",

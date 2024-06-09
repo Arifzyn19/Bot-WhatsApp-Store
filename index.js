@@ -227,6 +227,8 @@ const startSock = async () => {
   app.post("/webhook", (req, res) => {
     try {
       const data = req.body;
+      
+      console.log(data)
 
       if (client) {
         client.sendMessage("6288213503541@s.whatsapp.net", {

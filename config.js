@@ -12,11 +12,12 @@ const config = {
   wm: "Fairy Moon © 2023",
 
   self: false,
-  
+
   gateway: {
     apikey: "dDTLWx3AKrXdDeZ71Wcgr5cnmY3V0qm6oRmcNKR0pRD9FPAOaSWSlg5nylHQYLUb",
     apiId: "Xl24K1LojQEaSMtO",
     secretKey: "Arifzyn19",
+    privateKey: "68a47b4ed6c6b7a5fe4bf817ba783793c45e0e68",
   },
 
   msg: {

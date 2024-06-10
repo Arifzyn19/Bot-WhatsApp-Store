@@ -35,7 +35,6 @@ export default async function GroupParticipants(
           },
         });
       } else if (action == "remove") {
-        if (!db.groups[id]?.leave) return;
         client.sendMessage(id, {
           text: `@${jid.split("@")[0]} Leaving From "${metadata.subject}"`,
           contextInfo: {

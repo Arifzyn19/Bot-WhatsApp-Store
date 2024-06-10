@@ -176,6 +176,56 @@ class MaupediaAPI {
       );
     }
   }
+  
+  async checkDepositStatus (trxid) {
+    const sign = this.generateSign();
+    const formData = new FormData();
+    formData.append("key", this.apiKey);
+    formData.append("sign", sign);
+    formData.append("secret", this.secretKey);
+    formData.append("type", "status");   	
+    formData.append("trxid", trxid);
+    
+    try {
+      const response = await axios.post(
+        "https://maupedia.com/api/deposit",
+        formData,
+        {
+          headers: formData.getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Error from deposit: ${error.response ? error.response.data : error.message}`,
+      );
+    }
+  }
+  
+  async cancelDeposit (trxid) {
+    const sign = this.generateSign();
+    const formData = new FormData();
+    formData.append("key", this.apiKey);
+    formData.append("sign", sign);
+    formData.append("secret", this.secretKey);
+    formData.append("type", "cancel");   	
+    formData.append("trxid", trxid);
+    
+    try {
+      const response = await axios.post(
+        "https://maupedia.com/api/deposit",
+        formData,
+        {
+          headers: formData.getHeaders(),
+        },
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Error from deposit: ${error.response ? error.response.data : error.message}`,
+      );
+    }
+  }
 }
 
 export default MaupediaAPI;

@@ -9,7 +9,7 @@ import baileys, {
   generateWAMessageFromContent,
   prepareWAMessageMedia,
   toReadable,
-  WA_DEFAULT_EPHEMERAL
+  WA_DEFAULT_EPHEMERAL,
 } from "@whiskeysockets/baileys";
 const { proto } = baileys;
 import path from "path";
@@ -206,213 +206,234 @@ export function Client({ hisoka, store }) {
       },
       enumerable: true,
     },
-    
-    sendCopy: {
-            async value(jid, message, footer, buttons, quoted, options={}) {
-                let buttonsArray = buttons.map(([buttonText, copyText]) => ({
-                    name: "cta_copy",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: buttonText,
-                        copy_code: copyText
-                    })
-                }));
-                let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: false,
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-				
-                let msg = generateWAMessageFromContent(jid, content, { quoted, userJid: quoted.key.remoteJid  })
-                await hisoka.relayMessage(jid, msg.message, {
-                    messageId: msg.key.id,
-                });
-            },
-            enumerable: true,
-            writable: true,
-        },
-        sendCopyImg: {
-            async value(jid, media, message, footer, buttons, quoted, options={}) {
-                let buttonsArray = buttons.map(([buttonText, copyText]) => ({
-                    name: "cta_copy",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: buttonText,
-                        copy_code: copyText
-                    })
-                }));
-                let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{image: {url: media,}},
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-                let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-                await hisoka.relayMessage(jid, msg.message, {
-                    messageId: msg.key.id,
-                });
-            },
-            enumerable: true,
-            writable: true,
-        },
-        sendCopyVid: {
-            async value(jid, media, message, footer, buttons, quoted, options={}) {
-                let buttonsArray = buttons.map(([buttonText, copyText]) => ({
-                    name: "cta_copy",
-                    buttonParamsJson: JSON.stringify({
-                        display_text: buttonText,
-                        copy_code: copyText
-                    })
-                }));
-                let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{video: {url: media,}},
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-                let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-                await hisoka.relayMessage(jid, msg.message, {
-                    messageId: msg.key.id,
-                });
-            },
-            enumerable: true,
-            writable: true,
-        },
-        sendUrlImg: {
-			async value(jid, media, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, urlText]) => ({
-					name: "cta_url",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						url: urlText,
-						merchant_url: urlText,
-					})
-				}))
-				
-				let mediaBuffer;
 
-				function base64ToBuffer(base64) {
-    return Buffer.from(base64, 'base64');
-}
-    // Cek apakah media adalah buffer
-    if (Buffer.isBuffer(media)) {
-        mediaBuffer = media;
-    } 
-    // Cek apakah media adalah base64 string
-    else if (typeof media === 'string' && media.startsWith('data:')) {
-        const base64Data = media.split(',')[1];
-        mediaBuffer = base64ToBuffer(base64Data);
-    } 
-    // Cek apakah media adalah base64 tanpa prefix data URI
-    else if (typeof media === 'string' && media.match(/^[A-Za-z0-9+/]+={0,2}$/)) {
-        mediaBuffer = base64ToBuffer(media);
-    } 
-    // Cek apakah media adalah URL
-    else if (typeof media === 'string' && media.startsWith('http')) {
-        const response = await fetchBuffer(media, { responseType: 'arraybuffer' });
-        mediaBuffer = Buffer.from(response.data, 'binary');
-    } 
-    // Jika format media tidak diketahui, lempar error
-    else {
-        throw new Error('Unsupported media format');
-    }
-    
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{image: mediaBuffer },
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-		
-				/*if (hasMedia) {
+    sendCopy: {
+      async value(jid, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, copyText]) => ({
+          name: "cta_copy",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            copy_code: copyText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: false,
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted,
+          userJid: quoted.key.remoteJid,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendCopyImg: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, copyText]) => ({
+          name: "cta_copy",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            copy_code: copyText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { image: { url: media } },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendCopyVid: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, copyText]) => ({
+          name: "cta_copy",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            copy_code: copyText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { video: { url: media } },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendUrlImg: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, urlText]) => ({
+          name: "cta_url",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            url: urlText,
+            merchant_url: urlText,
+          }),
+        }));
+
+        let mediaBuffer;
+
+        function base64ToBuffer(base64) {
+          return Buffer.from(base64, "base64");
+        }
+        // Cek apakah media adalah buffer
+        if (Buffer.isBuffer(media)) {
+          mediaBuffer = media;
+        }
+        // Cek apakah media adalah base64 string
+        else if (typeof media === "string" && media.startsWith("data:")) {
+          const base64Data = media.split(",")[1];
+          mediaBuffer = base64ToBuffer(base64Data);
+        }
+        // Cek apakah media adalah base64 tanpa prefix data URI
+        else if (
+          typeof media === "string" &&
+          media.match(/^[A-Za-z0-9+/]+={0,2}$/)
+        ) {
+          mediaBuffer = base64ToBuffer(media);
+        }
+        // Cek apakah media adalah URL
+        else if (typeof media === "string" && media.startsWith("http")) {
+          const response = await fetchBuffer(media, {
+            responseType: "arraybuffer",
+          });
+          mediaBuffer = Buffer.from(response.data, "binary");
+        }
+        // Jika format media tidak diketahui, lempar error
+        else {
+          throw new Error("Unsupported media format");
+        }
+
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { image: mediaBuffer },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+
+        /*if (hasMedia) {
 					let mediaType = /\.(jpg|jpeg|png)$/i.test(media) ? 'image' : 'video';
 					let mediaObject = { [mediaType]: { url: media } };
 					content.viewOnceMessage.message.interactiveMessage.header = {
@@ -423,55 +444,60 @@ export function Client({ hisoka, store }) {
 						)),
 					};
 				}*/
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},		
-        sendUrlVid: {
-			async value(jid, media, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, urlText]) => ({
-					name: "cta_url",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						url: urlText,
-						merchant_url: urlText,
-					})
-				}))
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{video: {url: media,}},
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-		
-				/*if (hasMedia) {
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendUrlVid: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, urlText]) => ({
+          name: "cta_url",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            url: urlText,
+            merchant_url: urlText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { video: { url: media } },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+
+        /*if (hasMedia) {
 					let mediaType = /\.(jpg|jpeg|png)$/i.test(media) ? 'image' : 'video';
 					let mediaObject = { [mediaType]: { url: media } };
 					content.viewOnceMessage.message.interactiveMessage.header = {
@@ -482,194 +508,248 @@ export function Client({ hisoka, store }) {
 						)),
 					};
 				}*/
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},		
-        sendUrl: {
-			async value(jid, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, urlText]) => ({
-					name: "cta_url",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						url: urlText,
-						merchant_url: urlText,
-					})
-				}))
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: false,
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},		
-		sendQuickImg: {
-			async value(jid, media, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, quickText]) => ({
-					name: "quick_reply",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						id: quickText
-					})
-				}))
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{image: {url: media,}},
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},		
-		sendQuickVid: {
-			async value(jid, media, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, quickText]) => ({
-					name: "quick_reply",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						id: quickText
-					})
-				}))
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: true,
-									...(await prepareWAMessageMedia(
-										{video: {url: media,}},
-										{ upload: hisoka.waUploadToServer })),
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},		
-		sendQuick: {
-			async value(jid, message, footer, buttons, quoted, options = {}) {
-				let buttonsArray = buttons.map(([buttonText, quickText]) => ({
-					name: "quick_reply",
-					buttonParamsJson: JSON.stringify({
-						display_text: buttonText,
-						id: quickText
-					})
-				}))
-				let content = {
-					viewOnceMessage: {
-						message: {
-							messageContextInfo: {
-								deviceListMetadata: {},
-								deviceListMetadataVersion: 2,
-							},
-							interactiveMessage: proto.Message.InteractiveMessage.create({
-								body: proto.Message.InteractiveMessage.Body.create({
-									text: message,
-								}),
-								footer: proto.Message.InteractiveMessage.Footer.create({
-									text: footer,
-								}),
-								header: proto.Message.InteractiveMessage.Header.create({
-									hasMediaAttachment: false,
-								}),
-								nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-									buttons: buttonsArray,
-								}),
-								contextInfo: options.contextInfo || {},
-								...options,
-							}),
-						},
-					},
-				};
-				let msg = generateWAMessageFromContent(jid, content, { quoted: quoted, ephemeralExpiration: WA_DEFAULT_EPHEMERAL });
-				await hisoka.relayMessage(jid, msg.message, {
-					messageId: msg.key.id,
-				});
-			},
-			enumerable: true,
-			writable: true,
-		},
-    
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendUrl: {
+      async value(jid, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, urlText]) => ({
+          name: "cta_url",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            url: urlText,
+            merchant_url: urlText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: false,
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendQuickImg: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, quickText]) => ({
+          name: "quick_reply",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            id: quickText,
+          }),
+        }))
+        
+        let mediaBuffer;
+
+        function base64ToBuffer(base64) {
+          return Buffer.from(base64, "base64");
+        }
+        // Cek apakah media adalah buffer
+        if (Buffer.isBuffer(media)) {
+          mediaBuffer = media;
+        }
+        // Cek apakah media adalah base64 string
+        else if (typeof media === "string" && media.startsWith("data:")) {
+          const base64Data = media.split(",")[1];
+          mediaBuffer = base64ToBuffer(base64Data);
+        }
+        // Cek apakah media adalah base64 tanpa prefix data URI
+        else if (
+          typeof media === "string" &&
+          media.match(/^[A-Za-z0-9+/]+={0,2}$/)
+        ) {
+          mediaBuffer = base64ToBuffer(media);
+        }
+        // Cek apakah media adalah URL
+        else if (typeof media === "string" && media.startsWith("http")) {
+          const response = await fetchBuffer(media, {
+            responseType: "arraybuffer",
+          });
+          mediaBuffer = Buffer.from(response.data, "binary");
+        }
+        // Jika format media tidak diketahui, lempar error
+        else {
+          throw new Error("Unsupported media format");
+        }
+        
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { image: mediaBuffer },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendQuickVid: {
+      async value(jid, media, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, quickText]) => ({
+          name: "quick_reply",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            id: quickText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: true,
+                  ...(await prepareWAMessageMedia(
+                    { video: { url: media } },
+                    { upload: hisoka.waUploadToServer },
+                  )),
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
+    sendQuick: {
+      async value(jid, message, footer, buttons, quoted, options = {}) {
+        let buttonsArray = buttons.map(([buttonText, quickText]) => ({
+          name: "quick_reply",
+          buttonParamsJson: JSON.stringify({
+            display_text: buttonText,
+            id: quickText,
+          }),
+        }));
+        let content = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadata: {},
+                deviceListMetadataVersion: 2,
+              },
+              interactiveMessage: proto.Message.InteractiveMessage.create({
+                body: proto.Message.InteractiveMessage.Body.create({
+                  text: message,
+                }),
+                footer: proto.Message.InteractiveMessage.Footer.create({
+                  text: footer,
+                }),
+                header: proto.Message.InteractiveMessage.Header.create({
+                  hasMediaAttachment: false,
+                }),
+                nativeFlowMessage:
+                  proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                    buttons: buttonsArray,
+                  }),
+                contextInfo: options.contextInfo || {},
+                ...options,
+              }),
+            },
+          },
+        };
+        let msg = generateWAMessageFromContent(jid, content, {
+          quoted: quoted,
+          ephemeralExpiration: WA_DEFAULT_EPHEMERAL,
+        });
+        await hisoka.relayMessage(jid, msg.message, {
+          messageId: msg.key.id,
+        });
+      },
+      enumerable: true,
+      writable: true,
+    },
   });
 
   return client;

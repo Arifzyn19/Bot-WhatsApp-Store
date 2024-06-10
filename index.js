@@ -1,7 +1,6 @@
 // /root/base/index.js
 
 import config from "./config.js";
-// import app from "./system/message.js";
 
 const {
   default: makeWASocket,
@@ -22,6 +21,8 @@ import fs from "fs";
 import os from "os";
 import { exec } from "child_process";
 import util from "util";
+import path from "path";
+import crypto from "crypto";
 
 import express from "express";
 import bodyParser from "body-parser";
@@ -30,6 +31,7 @@ const app = express();
 import treeKill from "./system/lib/tree-kill.js";
 import serialize, { Client } from "./system/lib/serialize.js";
 import { formatSize, parseFileSize } from "./system/lib/function.js";
+import Database from "simple-json-db";
 
 const logger = pino({
   timestamp: () => `,"time":"${new Date().toJSON()}"`,
@@ -217,40 +219,9 @@ const startSock = async () => {
       await import(`./system/message.js?v=${Date.now()}`)
     ).default(client, store, m);
   });
-
-  app.use(express.json());
-  app.use(bodyParser.json());
-  app.get(`/`, function (req, res) {
-    res.status(200).send(`OK`);
-  });
-
-  app.post("/webhook", (req, res) => {
-    try {
-      const data = req.body;
-      
-      console.log(data)
-
-      if (client) {
-        client.sendMessage("6288213503541@s.whatsapp.net", {
-          text: util.format(data),
-        });
-      } else {
-        console.error("Connection is not initialized");
-      }
-
-      res.status(200).send("Webhook received");
-    } catch (error) {
-      console.error("Error handling webhook:", error);
-      res.status(500).send("Internal server error");
-    }
-  });
-
+  
   process.on("uncaughtException", console.error);
   process.on("unhandledRejection", console.error);
 };
 
-const PORT = process.env.PORT || 1912;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
 startSock();

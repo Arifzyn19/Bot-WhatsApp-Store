@@ -575,8 +575,8 @@ export function Client({ hisoka, store }) {
             display_text: buttonText,
             id: quickText,
           }),
-        }))
-        
+        }));
+
         let mediaBuffer;
 
         function base64ToBuffer(base64) {
@@ -609,7 +609,7 @@ export function Client({ hisoka, store }) {
         else {
           throw new Error("Unsupported media format");
         }
-        
+
         let content = {
           viewOnceMessage: {
             message: {

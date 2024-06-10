@@ -43,17 +43,17 @@ const db_deposit = new Database(
 );
 
 function findSenderByTrxid(trxid, _db) {
-    for (let sender in _db) {
-      for (let deposit of _db[sender]) {
-        if (deposit.trxid === trxid) {
-          return sender;
-        }
+  for (let sender in _db) {
+    for (let deposit of _db[sender]) {
+      if (deposit.trxid === trxid) {
+        return sender;
       }
     }
-    return null; 
   }
-  
-  function toRupiah(amount) {
+  return null;
+}
+
+function toRupiah(amount) {
   if (isNaN(amount)) {
     throw new Error("Invalid number");
   }
@@ -64,7 +64,6 @@ function findSenderByTrxid(trxid, _db) {
     minimumFractionDigits: 0,
   }).format(amount);
 }
-  
 
 /**
  *
@@ -513,14 +512,14 @@ export default async function message(client, store, m) {
           );
         }
         break;
-        
+
       case "ceksaldo":
       case "saldo":
-      case "cekakun": 
+      case "cekakun":
         {
-          const users = db.get(m.sender) || 0
-          const deposit = db_deposit.get(m.sender) || []
-          
+          const users = db.get(m.sender) || 0;
+          const deposit = db_deposit.get(m.sender) || [];
+
           let teks = `*[ DETAIL AKUN ]*
           
 *○  Saldo :*  ${users}
@@ -530,23 +529,23 @@ export default async function message(client, store, m) {
 
 Ingin deposit silahkan ketik *#deposit*`;
 
-        m.reply(teks)
+          m.reply(teks);
         }
-        break
+        break;
 
       case "deposit":
         {
           const userDeposits = db_deposit.get(m.sender) || [];
-          
+
           if (!m.args[0]) {
             return m.reply(`Format Salah\n\nContoh : deposit 1500`);
           }
-          
-          if (isNaN(m.args[0] )) {
+
+          if (isNaN(m.args[0])) {
             return m.reply("Format harus berupa angka.");
           }
-          
-          const jumlah_nya = m.args[0] * 1.25 
+
+          const jumlah_nya = m.args[0] * 1.25;
 
           const response = await maupediaAPI.deposit("nq", jumlah_nya);
 
@@ -582,108 +581,135 @@ Ingin deposit silahkan ketik *#deposit*`;
             qrImage,
             teks,
             "Tekan Tombol di bawah untuk cek status deposit.",
-            [["Check Deposit", `${m.prefix}check_deposit ${response.data.trxid}`]],
+            [
+              [
+                "Check Deposit",
+                `${m.prefix}check_deposit ${response.data.trxid}`,
+              ],
+            ],
             m,
           );
         }
         break;
-        
-      case "check_deposit": 
-  {
-    const deposits = db_deposit.get(m.sender) || [];
-    
-    if (deposits.length === 0) {
-      m.reply("Tidak ada data deposit yang tersedia saat ini");
-      return;
-    }
 
-    const trxid = m.args[0];
-    if (!trxid) {
-      m.reply("Transaksi ID tidak valid.");
-      return;
-    }
+      case "check_deposit":
+        {
+          const deposits = db_deposit.get(m.sender) || [];
 
-    const depositIndex = deposits.findIndex(deposit => deposit.trxid === trxid);
-    
-    if (depositIndex === -1) {
-      m.reply("Transaksi ID tidak ditemukan.");
-      return;
-    }
-    
-    const response = await maupediaAPI.checkDepositStatus(trxid);
-    const data = response.data[0];
+          if (deposits.length === 0) {
+            m.reply("Tidak ada data deposit yang tersedia saat ini");
+            return;
+          }
 
-    if (!data) {
-      m.reply("Detail transaksi tidak ditemukan.");
-      return;
-    }
-    
-    if (data.status === "paid") {
-      if (deposits[depositIndex].status !== "processed") {
-        const userBalance = db.get(m.sender) || 0;
-        const newBalance = userBalance + data.amount;
-        const dataUser = {
-          saldo: newBalance
+          const trxid = m.args[0];
+          if (!trxid) {
+            m.reply("Transaksi ID tidak valid.");
+            return;
+          }
+
+          const depositIndex = deposits.findIndex(
+            (deposit) => deposit.trxid === trxid,
+          );
+
+          if (depositIndex === -1) {
+            m.reply("Transaksi ID tidak ditemukan.");
+            return;
+          }
+
+          const response = await maupediaAPI.checkDepositStatus(trxid);
+          const data = response.data[0];
+
+          if (!data) {
+            m.reply("Detail transaksi tidak ditemukan.");
+            return;
+          }
+
+          if (data.status === "paid") {
+            if (deposits[depositIndex].status !== "processed") {
+              const userBalance = db.get(m.sender) || 0;
+              const newBalance = userBalance + data.amount;
+              const dataUser = {
+                saldo: newBalance,
+              };
+              db.set(m.sender, newBalance);
+
+              deposits[depositIndex].status = "processed";
+              db_deposit.set(m.sender, deposits);
+
+              const teks = `*[ Deposit Success ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nTerimakasih sudah melakukan transaksi.`;
+              await client.sendQuick(
+                m.from,
+                teks,
+                config.wm,
+                [["Saldo", ".saldo"]],
+                m,
+              );
+            } else {
+              m.reply("Deposit ini sudah diproses sebelumnya.");
+            }
+          }
+          if (data.status === "cancelled") {
+            m.reply("Deposit Sudah Di batalkan");
+            deposits[depositIndex].status = data.status;
+            db_deposit.set(m.sender, deposits);
+          } else if (data.status === "unpaid") {
+            const teks = `*[ Deposit Check ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nSilahkan klik di bawah untuk check kembali`;
+            await client.sendQuick(
+              m.from,
+              teks,
+              config.wm,
+              [
+                ["Check Deposit", `${m.prefix + m.command} ${trxid}`],
+                ["Cancel Deposit", `${m.prefix}cancel_deposit ${m.args[0]}`],
+              ],
+              m,
+            );
+          }
         }
-        db.set(m.sender, newBalance);
-        
-        deposits[depositIndex].status = "processed";
-        db_deposit.set(m.sender, deposits);
+        break;
+      case "cancel_deposit":
+        {
+          const deposits = db_deposit.get(m.sender) || [];
 
-        const teks = `*[ Deposit Success ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nTerimakasih sudah melakukan transaksi.`;
-        await client.sendQuick(m.from, teks, config.wm, [["Saldo", ".saldo"]], m);
-      } else {
-        m.reply("Deposit ini sudah diproses sebelumnya.");
-      }
-    } if (data.status === "cancelled") {
-      m.reply("Deposit Sudah Di batalkan");
-      deposits[depositIndex].status = data.status;
-      db_deposit.set(m.sender, deposits);
-    } else if (data.status === "unpaid") {
-      const teks = `*[ Deposit Check ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nSilahkan klik di bawah untuk check kembali`;
-      await client.sendQuick(m.from, teks, config.wm, [["Check Deposit", `${m.prefix + m.command} ${trxid}`], ["Cancel Deposit", `${m.prefix}cancel_deposit ${m.args[0]}`]], m);
-    }
-  }
-  break;
-  case "cancel_deposit": 
-  {
-    const deposits = db_deposit.get(m.sender) || [];
-    
-    if (deposits.length === 0) {
-      m.reply("Tidak ada data deposit yang tersedia saat ini");
-      return;
-    }
+          if (deposits.length === 0) {
+            m.reply("Tidak ada data deposit yang tersedia saat ini");
+            return;
+          }
 
-    const trxid = m.args[0];
-    if (!trxid) {
-      m.reply("Transaksi ID tidak valid.");
-      return;
-    }
+          const trxid = m.args[0];
+          if (!trxid) {
+            m.reply("Transaksi ID tidak valid.");
+            return;
+          }
 
-    const depositIndex = deposits.findIndex(deposit => deposit.trxid === trxid);
-    
-    if (depositIndex === -1) {
-      m.reply("Transaksi ID tidak ditemukan.");
-      return;
-    }
+          const depositIndex = deposits.findIndex(
+            (deposit) => deposit.trxid === trxid,
+          );
 
-    if (deposits[depositIndex].status === "paid") {
-      m.reply("Deposit ini sudah dibayar dan tidak dapat dibatalkan.");
-      return;
-    }
+          if (depositIndex === -1) {
+            m.reply("Transaksi ID tidak ditemukan.");
+            return;
+          }
 
-    const response = await maupediaAPI.cancelDeposit(trxid);
+          if (deposits[depositIndex].status === "paid") {
+            m.reply("Deposit ini sudah dibayar dan tidak dapat dibatalkan.");
+            return;
+          }
 
-    if (response.result) {
-      deposits[depositIndex].status = response.data[0].status;
-      db_deposit.set(m.sender, deposits);
+          const response = await maupediaAPI.cancelDeposit(trxid);
 
-      m.reply(`*[ Deposit Cancelled ]*\n\nStatus: ${response.data[0].status}\nAmount: ${toRupiah(response.data[0].amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nDeposit berhasil dibatalkan.`);
-    } else {
-      m.reply(`Pembatalan gagal: ${response.message}`);
-    }
-  }
-  break;
+          if (response.result) {
+            deposits[depositIndex].status = response.data[0].status;
+            db_deposit.set(m.sender, deposits);
+
+            m.reply(
+              `*[ Deposit Cancelled ]*\n\nStatus: ${response.data[0].status}\nAmount: ${toRupiah(response.data[0].amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nDeposit berhasil dibatalkan.`,
+            );
+          } else {
+            m.reply(`Pembatalan gagal: ${response.message}`);
+          }
+        }
+        break;
       default:
         if (
           [">", "eval", "=>"].some((a) =>

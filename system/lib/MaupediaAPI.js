@@ -176,16 +176,16 @@ class MaupediaAPI {
       );
     }
   }
-  
-  async checkDepositStatus (trxid) {
+
+  async checkDepositStatus(trxid) {
     const sign = this.generateSign();
     const formData = new FormData();
     formData.append("key", this.apiKey);
     formData.append("sign", sign);
     formData.append("secret", this.secretKey);
-    formData.append("type", "status");   	
+    formData.append("type", "status");
     formData.append("trxid", trxid);
-    
+
     try {
       const response = await axios.post(
         "https://maupedia.com/api/deposit",
@@ -201,16 +201,16 @@ class MaupediaAPI {
       );
     }
   }
-  
-  async cancelDeposit (trxid) {
+
+  async cancelDeposit(trxid) {
     const sign = this.generateSign();
     const formData = new FormData();
     formData.append("key", this.apiKey);
     formData.append("sign", sign);
     formData.append("secret", this.secretKey);
-    formData.append("type", "cancel");   	
+    formData.append("type", "cancel");
     formData.append("trxid", trxid);
-    
+
     try {
       const response = await axios.post(
         "https://maupedia.com/api/deposit",

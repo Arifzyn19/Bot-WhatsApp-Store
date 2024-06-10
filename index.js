@@ -219,7 +219,7 @@ const startSock = async () => {
       await import(`./system/message.js?v=${Date.now()}`)
     ).default(client, store, m);
   });
-  
+
   process.on("uncaughtException", console.error);
   process.on("unhandledRejection", console.error);
 };

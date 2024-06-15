@@ -586,6 +586,7 @@ Ingin deposit silahkan ketik *#deposit*`;
                 "Check Deposit",
                 `${m.prefix}check_deposit ${response.data.trxid}`,
               ],
+              ["Cancel Deposit", `${m.prefix}cancel_deposit ${response.data.trxid}`],
             ],
             m,
           );
@@ -647,8 +648,7 @@ Ingin deposit silahkan ketik *#deposit*`;
             } else {
               m.reply("Deposit ini sudah diproses sebelumnya.");
             }
-          }
-          if (data.status === "cancelled") {
+          } else if (data.status === "cancelled") { 
             m.reply("Deposit Sudah Di batalkan");
             deposits[depositIndex].status = data.status;
             db_deposit.set(m.sender, deposits);

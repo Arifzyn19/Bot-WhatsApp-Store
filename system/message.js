@@ -103,12 +103,12 @@ export default async function message(client, store, m) {
     }
 
     // if (!m.isGroup && !m.isOwner) return;
-
+     
     // database JSON
     const db_respon_list = JSON.parse(
       fs.readFileSync(path.join(__dirname, "./database/store.json")),
     );
-
+    
     if (m.isGroup && isAlreadyResponList(m.from, m.body, db_respon_list)) {
       var get_data_respon = getDataResponList(m.from, m.body, db_respon_list);
       var get_response = sendResponList(m.from, m.body, db_respon_list);
@@ -254,7 +254,15 @@ export default async function message(client, store, m) {
           }
         }
         break;
-
+        
+      case "backup": 
+        {
+          if (!m.isOwner) return m.reply("owner")	
+          const filePath = path.join(__dirname, "database", "store.json")
+          const file = fs.readFileSync(filePath)
+          await client.sendMessage(m.from, { document: file, mimetype: "application/json", fileName: "store.json" }, { quoted: ftextt })
+        }
+        break
       // group menu
       case "hidetag":
       case "ht":
@@ -489,227 +497,47 @@ export default async function message(client, store, m) {
         }
         break;
 
-      case "process":
-      case "done":
-        if (!m.isGroup) return m.reply("group");
-        if (!m.isAdmin) return m.reply("admin");
+      case "p":
+  case "process":
+    if (!m.isGroup) {
+      return m.reply("group");
+    }
+    if (!m.isAdmin) {
+      return m.reply("admin");
+    }
 
-        const who = m.quoted
-          ? m.quoted.sender
-          : m.mentions && m.mentions.length > 0
-            ? m.mentions[0]
-            : "";
+    const whoProcess = m.quoted
+      ? m.quoted.sender
+      : m.mentions && m.mentions.length > 0
+        ? m.mentions[0]
+        : "";
 
-        if (m.command == "done") {
-          m.reply(
-            "𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α, \nお待ちください Omachikudasai\n𝒅𝒊𝒕𝒖𝒏𝒈𝒈𝒖 𝒚𝒂 (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)",
-            { mentions: [who] },
-          );
-        } else {
-          m.reply(
-            "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
-            { mentions: [who] },
-          );
-        }
-        break;
+    m.reply(
+      "𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α, \nお待ちください Omachikudasai\n𝒅𝒊𝒕𝒖𝒏𝒈𝒈𝒖 𝒚𝒂 (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)",
+      { mentions: [whoProcess] }
+    );
+    break;
+ 
+  case "d":  
+  case "done":
+    if (!m.isGroup) {
+      return m.reply("group");
+    }
+    if (!m.isAdmin) {
+      return m.reply("admin");
+    }
 
-      case "ceksaldo":
-      case "saldo":
-      case "cekakun":
-        {
-          const users = db.get(m.sender) || 0;
-          const deposit = db_deposit.get(m.sender) || [];
+    const whoDone = m.quoted
+      ? m.quoted.sender
+      : m.mentions && m.mentions.length > 0
+        ? m.mentions[0]
+        : "";
 
-          let teks = `*[ DETAIL AKUN ]*
-          
-*○  Saldo :*  ${users}
-*○  Name :* ${m.pushName}
-*○  Id :* ${m.sender.replace("@s.whatsapp.net", "")}
-*○  Total Transaksi :* *${deposit.length}*
-
-Ingin deposit silahkan ketik *#deposit*`;
-
-          m.reply(teks);
-        }
-        break;
-
-      case "deposit":
-        {
-          const userDeposits = db_deposit.get(m.sender) || [];
-
-          if (!m.args[0]) {
-            return m.reply(`Format Salah\n\nContoh : deposit 1500`);
-          }
-
-          if (isNaN(m.args[0])) {
-            return m.reply("Format harus berupa angka.");
-          }
-
-          const jumlah_nya = m.args[0] * 1.25;
-
-          const response = await maupediaAPI.deposit("nq", jumlah_nya);
-
-          if (!response.result) {
-            return m.reply(response.message);
-          }
-
-          const depositData = {
-            status: false,
-            tanggal_deposit: new Date().toLocaleDateString("ID", {
-              timeZone: "Asia/Jakarta",
-            }),
-            ...response.data,
-            sender: m.sender,
-          };
-
-          userDeposits.push(depositData);
-          db_deposit.set(m.sender, userDeposits);
-
-          let teks = `「 𝙆𝙊𝙉𝙁𝙄𝙍𝙈𝘼𝙎𝙄-𝘿𝙀𝙋𝙊𝙎𝙄𝙏 」\n\n`;
-          for (let key of Object.keys(response.data).filter(
-            (v) => !/pay_url|checkout_url|qr_url|qr_string/i.test(v),
-          )) {
-            teks += `》 ${key.replace(/_/g, " ").toUpperCase()} : ${response.data[key]}\n`;
-          }
-
-          teks += `\n*Silahkan Scan Qris Di Atas Sesuai Nominal Jika Sudah Transfer Harap tunggu!*`;
-
-          const qrImage = await QRCode.toDataURL(response.data.qr_string);
-
-          await client.sendQuickImg(
-            m.sender,
-            qrImage,
-            teks,
-            "Tekan Tombol di bawah untuk cek status deposit.",
-            [
-              [
-                "Check Deposit",
-                `${m.prefix}check_deposit ${response.data.trxid}`,
-              ],
-              ["Cancel Deposit", `${m.prefix}cancel_deposit ${response.data.trxid}`],
-            ],
-            m,
-          );
-        }
-        break;
-
-      case "check_deposit":
-        {
-          const deposits = db_deposit.get(m.sender) || [];
-
-          if (deposits.length === 0) {
-            m.reply("Tidak ada data deposit yang tersedia saat ini");
-            return;
-          }
-
-          const trxid = m.args[0];
-          if (!trxid) {
-            m.reply("Transaksi ID tidak valid.");
-            return;
-          }
-
-          const depositIndex = deposits.findIndex(
-            (deposit) => deposit.trxid === trxid,
-          );
-
-          if (depositIndex === -1) {
-            m.reply("Transaksi ID tidak ditemukan.");
-            return;
-          }
-
-          const response = await maupediaAPI.checkDepositStatus(trxid);
-          const data = response.data[0];
-
-          if (!data) {
-            m.reply("Detail transaksi tidak ditemukan.");
-            return;
-          }
-
-          if (data.status === "paid") {
-            if (deposits[depositIndex].status !== "processed") {
-              const userBalance = db.get(m.sender) || 0;
-              const newBalance = userBalance + data.amount;
-              const dataUser = {
-                saldo: newBalance,
-              };
-              db.set(m.sender, newBalance);
-
-              deposits[depositIndex].status = "processed";
-              db_deposit.set(m.sender, deposits);
-
-              const teks = `*[ Deposit Success ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nTerimakasih sudah melakukan transaksi.`;
-              await client.sendQuick(
-                m.from,
-                teks,
-                config.wm,
-                [["Saldo", ".saldo"]],
-                m,
-              );
-            } else {
-              m.reply("Deposit ini sudah diproses sebelumnya.");
-            }
-          } else if (data.status === "cancelled") { 
-            m.reply("Deposit Sudah Di batalkan");
-            deposits[depositIndex].status = data.status;
-            db_deposit.set(m.sender, deposits);
-          } else if (data.status === "unpaid") {
-            const teks = `*[ Deposit Check ]*\n\nStatus: ${data.status}\nAmount: ${toRupiah(data.amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nSilahkan klik di bawah untuk check kembali`;
-            await client.sendQuick(
-              m.from,
-              teks,
-              config.wm,
-              [
-                ["Check Deposit", `${m.prefix + m.command} ${trxid}`],
-                ["Cancel Deposit", `${m.prefix}cancel_deposit ${m.args[0]}`],
-              ],
-              m,
-            );
-          }
-        }
-        break;
-      case "cancel_deposit":
-        {
-          const deposits = db_deposit.get(m.sender) || [];
-
-          if (deposits.length === 0) {
-            m.reply("Tidak ada data deposit yang tersedia saat ini");
-            return;
-          }
-
-          const trxid = m.args[0];
-          if (!trxid) {
-            m.reply("Transaksi ID tidak valid.");
-            return;
-          }
-
-          const depositIndex = deposits.findIndex(
-            (deposit) => deposit.trxid === trxid,
-          );
-
-          if (depositIndex === -1) {
-            m.reply("Transaksi ID tidak ditemukan.");
-            return;
-          }
-
-          if (deposits[depositIndex].status === "paid") {
-            m.reply("Deposit ini sudah dibayar dan tidak dapat dibatalkan.");
-            return;
-          }
-
-          const response = await maupediaAPI.cancelDeposit(trxid);
-
-          if (response.result) {
-            deposits[depositIndex].status = response.data[0].status;
-            db_deposit.set(m.sender, deposits);
-
-            m.reply(
-              `*[ Deposit Cancelled ]*\n\nStatus: ${response.data[0].status}\nAmount: ${toRupiah(response.data[0].amount)}\nTanggal deposit: ${deposits[depositIndex].tanggal_deposit}\n\nDeposit berhasil dibatalkan.`,
-            );
-          } else {
-            m.reply(`Pembatalan gagal: ${response.message}`);
-          }
-        }
-        break;
+    m.reply(
+      "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
+      { mentions: [whoDone] }
+    );
+    break;
       default:
         if (
           [">", "eval", "=>"].some((a) =>

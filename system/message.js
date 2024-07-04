@@ -103,12 +103,12 @@ export default async function message(client, store, m) {
     }
 
     // if (!m.isGroup && !m.isOwner) return;
-     
+
     // database JSON
     const db_respon_list = JSON.parse(
       fs.readFileSync(path.join(__dirname, "./database/store.json")),
     );
-    
+
     if (m.isGroup && isAlreadyResponList(m.from, m.body, db_respon_list)) {
       var get_data_respon = getDataResponList(m.from, m.body, db_respon_list);
       var get_response = sendResponList(m.from, m.body, db_respon_list);
@@ -254,15 +254,23 @@ export default async function message(client, store, m) {
           }
         }
         break;
-        
-      case "backup": 
+
+      case "backup":
         {
-          if (!m.isOwner) return m.reply("owner")	
-          const filePath = path.join(__dirname, "database", "store.json")
-          const file = fs.readFileSync(filePath)
-          await client.sendMessage(m.from, { document: file, mimetype: "application/json", fileName: "store.json" }, { quoted: ftextt })
+          if (!m.isOwner) return m.reply("owner");
+          const filePath = path.join(__dirname, "database", "store.json");
+          const file = fs.readFileSync(filePath);
+          await client.sendMessage(
+            m.from,
+            {
+              document: file,
+              mimetype: "application/json",
+              fileName: "store.json",
+            },
+            { quoted: ftextt },
+          );
         }
-        break
+        break;
       // group menu
       case "hidetag":
       case "ht":
@@ -498,46 +506,115 @@ export default async function message(client, store, m) {
         break;
 
       case "p":
-  case "process":
-    if (!m.isGroup) {
-      return m.reply("group");
-    }
-    if (!m.isAdmin) {
-      return m.reply("admin");
-    }
+      case "process":
+        if (!m.isGroup) {
+          return m.reply("group");
+        }
+        if (!m.isAdmin) {
+          return m.reply("admin");
+        }
 
-    const whoProcess = m.quoted
-      ? m.quoted.sender
-      : m.mentions && m.mentions.length > 0
-        ? m.mentions[0]
-        : "";
+        const whoProcess = m.quoted
+          ? m.quoted.sender
+          : m.mentions && m.mentions.length > 0
+            ? m.mentions[0]
+            : "";
 
-    m.reply(
-      "𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α, \nお待ちください Omachikudasai\n𝒅𝒊𝒕𝒖𝒏𝒈𝒈𝒖 𝒚𝒂 (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)",
-      { mentions: [whoProcess] }
-    );
-    break;
- 
-  case "d":  
-  case "done":
-    if (!m.isGroup) {
-      return m.reply("group");
-    }
-    if (!m.isAdmin) {
-      return m.reply("admin");
-    }
+        m.reply(
+          "𝑷𝑹𝑶𝑺𝑬𝑺 𝗄α, \nお待ちください Omachikudasai\n𝒅𝒊𝒕𝒖𝒏𝒈𝒈𝒖 𝒚𝒂 (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)",
+          { mentions: [whoProcess] },
+        );
+        break;
 
-    const whoDone = m.quoted
-      ? m.quoted.sender
-      : m.mentions && m.mentions.length > 0
-        ? m.mentions[0]
-        : "";
+      case "d":
+      case "done":
+        if (!m.isGroup) {
+          return m.reply("group");
+        }
+        if (!m.isAdmin) {
+          return m.reply("admin");
+        }
 
-    m.reply(
-      "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
-      { mentions: [whoDone] }
-    );
-    break;
+        const whoDone = m.quoted
+          ? m.quoted.sender
+          : m.mentions && m.mentions.length > 0
+            ? m.mentions[0]
+            : "";
+
+        m.reply(
+          "𝑫𝑶𝑵𝑬 𝗄α, \nありがとう Arigatō 𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉\n𝗌𝗂ᥣαɦ𝗄α𐓣 ᑯ𝗂 𝖼𝖾𝗄 α𝗄υ𐓣 𐓣𝗒α,𝗃𝗀𐓣 ᥣυρα 𝐒𝐒 𝗒α (⁠๑⁠¯⁠◡⁠¯⁠๑⁠)💐",
+          { mentions: [whoDone] },
+        );
+        break;
+
+      case "sticker":
+      case "s":
+        const { writeExif } = await import("./lib/sticker.js");
+        if (/image|video|webp/.test(quoted.msg.mimetype)) {
+          let media = await downloadM();
+          if (quoted.msg?.seconds > 10)
+            throw "Video diatas durasi 10 detik gabisa";
+          let exif;
+          if (m.text) {
+            let [packname, author] = m.text.split(/[,|\-+&]/);
+            exif = {
+              packName: packname ? packname : "",
+              packPublish: author ? author : "",
+            };
+          } else {
+            exif = { ...config.exif };
+          }
+
+          const sticker = await writeExif(
+            { mimetype: quoted.msg.mimetype, data: media },
+            exif,
+          );
+          await client.sendMessage(m.from, { sticker }, { quoted: m });
+        } else if (m.mentions.length !== 0) {
+          for (let id of m.mentions) {
+            await delay(1500);
+            let url = await client.profilePictureUrl(m.mentions[0], "image");
+            let media = await Func.fetchBuffer(url);
+            let sticker = await writeExif(media, { ...config.exif });
+            await client.sendMessage(m.from, { sticker }, { quoted: m });
+          }
+        } else if (
+          /(https?:\/\/.*\.(?:png|jpg|jpeg|webp|mov|mp4|webm|gif))/i.test(
+            m.text,
+          )
+        ) {
+          for (let url of Func.isUrl(m.text)) {
+            await delay(1500);
+            let media = await Func.fetchBuffer(url);
+            let sticker = await writeExif(media, { ...config.exif });
+            await client.sendMessage(m.from, { sticker }, { quoted: m });
+          }
+        } else m.reply("Send or reply image/video");
+        break;
+      case "setwelcome":
+        {
+          if (!m.isGroup) {
+            m.reply("group");
+            return;
+          }
+          if (!m.isAdmin) {
+            m.reply("admin");
+            return;
+          }
+          if (!m.text) {
+            m.reply("Pesan tidak boleh kosong!");
+            return;
+          }
+
+          const welcome_db = db.get("welcome") || {};
+
+          // Menyimpan pesan sambutan dengan ID grup sebagai kunci
+          welcome_db[m.from] = m.text;
+          db.set("welcome", welcome_db);
+
+          m.reply(`Pesan sambutan untuk grup ${m.from} telah disimpan.`);
+        }
+        break;
       default:
         if (
           [">", "eval", "=>"].some((a) =>

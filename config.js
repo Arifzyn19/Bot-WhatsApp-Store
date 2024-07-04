@@ -8,10 +8,15 @@ const __dirname = dirname(__filename);
 const config = {
   pairing: "628195107972",
 
-  owner: ["6288213503541", "6287891540792"],
+  owner: ["6285691464024", "6287891540792"],
   wm: "Fairy Moon © 2023",
 
   self: false,
+
+  exif: {
+    packName: `Powerred By `,
+    packPublish: "FairyMoon",
+  },
 
   gateway: {
     apikey: "dDTLWx3AKrXdDeZ71Wcgr5cnmY3V0qm6oRmcNKR0pRD9FPAOaSWSlg5nylHQYLUb",

@@ -1,4 +1,12 @@
 import config from "../../config.js";
+import Database from "simple-json-db";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const db = new Database(path.join(__dirname, "../database/database.json"));
 
 export default async function GroupParticipants(
   client,
@@ -6,6 +14,19 @@ export default async function GroupParticipants(
 ) {
   try {
     const metadata = await client.groupMetadata(id);
+
+    const welcome_db = db.get("welcome") || {};
+    const welcomeMessage =
+      welcome_db[id] ||
+      `🌷 いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠)
+@${jid.split("@")[0]}
+
+⌗ ┆ketik .shop untuk melihat list
+⌗ ┆grup mabar dan topup
+⌗ ┆dilarang chat/kirim stiker 18+
+⌗ ┆ada pertanyaan? silahkan tag/pc admin
+
+≿━━━━༺❀༻━━━━༺❀༻━━━━≾`;
 
     // participants
     for (const jid of participants) {
@@ -21,33 +42,9 @@ export default async function GroupParticipants(
       // action
       if (action == "add") {
         client.sendMessage(id, {
-          text: `🌷 いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠) 
-@${jid.split("@")[0]} 
-
-⌗ ┆ketik .shop untuk melihat list
-⌗ ┆grup mabar dan topup
-⌗ ┆dilarang chat/kirim stiker 18+ 
-⌗ ┆ada pertanyaan? silahkan tag/pc admin
-
-≿━━━━༺❀༻━━━━༺❀༻━━━━≾`,
+          text: welcomeMessage.replace("@user", `@${jid.split("@")[0]}`),
           contextInfo: {
             mentionedJid: [jid],
-          },
-        });
-      } else if (action == "remove") {
-        client.sendMessage(id, {
-          text: `@${jid.split("@")[0]} Leaving From "${metadata.subject}"`,
-          contextInfo: {
-            mentionedJid: [jid],
-            externalAdReply: {
-              title: `Leave`,
-              body: config.wm,
-              mediaType: 1,
-              previewType: 0,
-              renderLargerThumbnail: true,
-              thumbnailUrl: profile,
-              sourceUrl: "",
-            },
           },
         });
       }

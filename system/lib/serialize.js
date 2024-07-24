@@ -782,7 +782,9 @@ export default async function serialize(hisoka, msg, store) {
           : /^.{18}/.test(m.id)
             ? "desktop"
             : "unknown";
-    m.isBot = m.id.startsWith("BAE5") || m.id.startsWith("HSK");
+    m.isBot = (m.id?.startsWith("3EB0") && m.id?.length === 22) ||
+      m.id?.length === 16 ||
+      false;
     m.isGroup = m.from.endsWith("@g.us");
     m.participant =
       jidNormalizedUser(msg?.participant || m.key.participant) || false;
@@ -922,7 +924,9 @@ export default async function serialize(hisoka, msg, store) {
                 ? "desktop"
                 : "unknown";
         m.quoted.isBot =
-          m.quoted.id.startsWith("BAE5") || m.quoted.id.startsWith("HSK");
+          (m.quoted?.id?.startsWith("3EB0") && m.quoted?.id?.length === 22) ||
+        m.quoted?.id?.length === 16 ||
+        false;
         m.quoted.isGroup = m.quoted.from.endsWith("@g.us");
         m.quoted.participant =
           jidNormalizedUser(m.msg?.contextInfo?.participant) || false;

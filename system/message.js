@@ -322,7 +322,32 @@ export default async function message(client, store, m) {
           }
         }
         break;
+        
+      case "open":
+      case "close":
+        {
+          if (!m.isGroup) return m.reply("group");
+          if (!m.isAdmin) return m.reply("admin");
+          if (!m.isBotAdmin) return m.reply("botAdmin");
+          let isClose = {
+            open: "not_announcement",
+            close: "announcement",
+          }[m.command || ""];
+          
+          await client.groupSettingUpdate(m.from, isClose);
 
+          if (m.command === "close") {
+            await m.reply(
+              "𝑪𝒍𝒐𝒔𝒆 𝗀𝗋υρ ᑯ𝗂 𝗍υ𝗍υρ 🔐 ﮩ٨ـﮩﮩ٨ـ\nありがとうございます , おやすみなさい\nArigatōgozaimasu, oyasuminasai\n𝒕𝒆𝒓𝒊𝒎𝒂 𝒌𝒂𝒔𝒊𝒉 , 𝒔𝒆𝒍𝒂𝒎𝒂𝒕 𝒎𝒂𝒍𝒂𝒎 (⁠◍⁠•⁠ᴗ⁠•⁠◍⁠)⁠❤",
+            );
+          } else if (m.command === "open") {
+            await m.reply(
+              "𝑶𝒑𝒆𝒏 𝗀𝗋υρ ᑯ𝗂 ᑲυ𝗄α 🔓🔑 ﮩ٨ـﮩﮩ٨ـ\nおはよう ございます\nohayōgozaimasu\n𝐬𝐞𝐥𝐚𝐦𝐚𝐭 𝐩𝐚𝐠𝐢 (⁠>⁠▽⁠<⁠)",
+            );
+          }
+        }
+        break;
+        
       case "demote":
       case "promote":
         {

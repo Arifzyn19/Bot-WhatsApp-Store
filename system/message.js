@@ -129,8 +129,10 @@ export default async function message(client, store, m) {
     }
 
     const menus = {
+      download: ["tiktok"],	
       group: ["hidetag", "group", "promote", "demote", "link", "delete"],
       store: ["shop", "addlist", "dellist", "updatelist"],
+      owner: ["backup", "setwelcome", "$", ">"]
     };
 
     const more = String.fromCharCode(8206);
@@ -226,6 +228,39 @@ export default async function message(client, store, m) {
           }
         }
         break;
+        
+      // batas 
+      // downloader 
+      case "tt":
+      case "tiktok": 
+        {
+          if (!m.text) return m.reply(`[!] Silahkan masukan url tiktok.`)	
+          let url = Func.isUrl(m.text)[0]
+          
+          await m.reply("Tunggu Sebentar ya kak")
+          
+          try {
+            const response = await Func.fetchJson(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`)
+            
+            if (response.images?.length) return m.reply("Maap Kak image belum support ya.")
+            
+            const caption = `*</> TikTok Download </>*\n\n`
+            + ` • ID: ${response.id}\n`
+            + ` • Title: ${response.title}\n`
+            + ` • Author: ${response.author?.name} (@${response.author?.unique_id})\n`
+            + ` • Music: ${response.music?.title} by ${response.music?.author}\n`
+            + ` • Duration: ${response.video?.durationFormatted}\n`
+            + ` • Stats: ${response.stats?.likeCount} likes, ${response.stats?.commentCount} comments, ${response.stats?.shareCount} shares\n\n`
+            + `${config.wm}`
+          
+            await client.sendMessage(m.from, { video: { url: response.video?.noWatermark }, caption, mimetype: "video/mp4"}, { quoted: m });
+          } catch (e) {
+            console.log(e)
+            m.reply("Maap kak seperti nya sedang error.")
+          }
+        }
+        break
+      // batas 
 
       case "hd":
       case "remini":

@@ -15,11 +15,10 @@ export default async function GroupParticipants(
   try {
     const metadata = await client.groupMetadata(id);
 
+    // Read welcome message from the database
     const welcome_db = db.get("welcome") || {};
-    const welcomeMessage =
-      welcome_db[id] ||
-      `🌷 いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠)
-@${jid.split("@")[0]}
+    const defaultWelcomeMessage = `🌷 いらっしゃいませ 𝑰𝒓𝒂𝒔𝒔𝒉𝒂𝒊𝒎𝒂𝒔𝒆 (⁠｡⁠◕⁠‿⁠◕⁠｡⁠)
+@user
 
 ⌗ ┆ketik .shop untuk melihat list
 ⌗ ┆grup mabar dan topup
@@ -27,10 +26,11 @@ export default async function GroupParticipants(
 ⌗ ┆ada pertanyaan? silahkan tag/pc admin
 
 ≿━━━━༺❀༻━━━━༺❀༻━━━━≾`;
+    const welcomeMessage = welcome_db[id] || defaultWelcomeMessage;
 
-    // participants
+    // Loop through participants
     for (const jid of participants) {
-      // get profile picture user
+      // Get profile picture user
       let profile;
       try {
         profile = await client.profilePictureUrl(jid, "image");
@@ -39,8 +39,8 @@ export default async function GroupParticipants(
           "https://lh3.googleusercontent.com/proxy/esjjzRYoXlhgNYXqU8Gf_3lu6V-eONTnymkLzdwQ6F6z0MWAqIwIpqgq_lk4caRIZF_0Uqb5U8NWNrJcaeTuCjp7xZlpL48JDx-qzAXSTh00AVVqBoT7MJ0259pik9mnQ1LldFLfHZUGDGY=w1200-h630-p-k-no-nu";
       }
 
-      // action
-      if (action == "add") {
+      // Action: Welcome new participant
+      if (action === "add") {
         client.sendMessage(id, {
           text: welcomeMessage.replace("@user", `@${jid.split("@")[0]}`),
           contextInfo: {
@@ -50,6 +50,6 @@ export default async function GroupParticipants(
       }
     }
   } catch (e) {
-    throw e;
+    console.error("Error handling group participants:", e);
   }
 }

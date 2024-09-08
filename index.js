@@ -48,7 +48,7 @@ const startSock = async () => {
   console.log(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
 
   const client = makeWASocket({
-    version,
+    version: [2, 3000, 1015901307],
     logger,
     printQRInTerminal: !usePairingCode,
     auth: {

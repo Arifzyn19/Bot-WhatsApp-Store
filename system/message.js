@@ -453,14 +453,26 @@ export default async function message(client, store, m) {
           db_respon_list.forEach((x, i) => {
             if (x.id === m.from) {
               arr_rows.push({
-                title: `${i + 1}. ${x.key}`,
+                title: `ᯓ★ ${x.key}`,
                 id: x.key,
               });
             }
           });
+            
+            arr_rows.sort((a, b) => a.title.localeCompare(b.title));
+            
           let teks = `Hai @${m.sender.split("@")[0]}\nBerikut list item yang tersedia di group ini!\n\nSilahkan pilih produk yang diinginkan!`;
 
           const sections = [
+              {
+                 title: "Main",
+                  rows: [
+                      {
+                          title: "Payment Method",
+                          id: "Payment"
+                      }
+                  ]
+              },
             {
               title: "List Produk",
               rows: arr_rows,

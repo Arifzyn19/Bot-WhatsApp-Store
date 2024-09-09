@@ -6,7 +6,7 @@
 5 silly config load:file:/usr/local/etc/npmrc
 6 verbose title npm start
 7 verbose argv "start"
-8 verbose logfile logs-max:10 dir:/home/container/.npm/_logs/2024-09-02T06_43_29_796Z-
-9 verbose logfile /home/container/.npm/_logs/2024-09-02T06_43_29_796Z-debug-0.log
+8 verbose logfile logs-max:10 dir:/home/container/.npm/_logs/2024-09-09T13_07_06_333Z-
+9 verbose logfile /home/container/.npm/_logs/2024-09-09T13_07_06_333Z-debug-0.log
 10 silly logfile start cleaning logs, removing 1 files
 11 silly logfile done cleaning log files

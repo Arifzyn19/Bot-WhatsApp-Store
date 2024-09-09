@@ -1,0 +1,34 @@
+0 verbose cli /usr/local/bin/node /usr/local/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@10.8.3
+2 info using node@v20.17.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/container/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm exec prettier --write .
+7 verbose argv "exec" "--" "prettier" "--write" "."
+8 verbose logfile logs-max:10 dir:/home/container/.npm/_logs/2024-09-09T13_31_54_453Z-
+9 verbose logfile /home/container/.npm/_logs/2024-09-09T13_31_54_453Z-debug-0.log
+10 silly logfile start cleaning logs, removing 1 files
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:1054867456 maxSize:263716864 maxEntrySize:131858432
+13 http fetch GET 200 https://registry.npmjs.org/prettier 478ms (cache miss)
+14 silly packumentCache heap:1054867456 maxSize:263716864 maxEntrySize:131858432
+15 silly packumentCache heap:1054867456 maxSize:263716864 maxEntrySize:131858432
+16 silly idealTree buildDeps
+17 silly fetch manifest prettier@3.3.3
+18 silly packumentCache full:https://registry.npmjs.org/prettier cache-miss
+19 http fetch GET 200 https://registry.npmjs.org/prettier 107ms (cache miss)
+20 silly packumentCache full:https://registry.npmjs.org/prettier set size:undefined disposed:false
+21 silly placeDep ROOT prettier@3.3.3 OK for:  want: 3.3.3
+22 silly reify moves {}
+23 silly audit bulk request { prettier: [ '3.3.3' ] }
+24 silly tarball no local data for prettier@https://registry.npmjs.org/prettier/-/prettier-3.3.3.tgz. Extracting by manifest.
+25 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 275ms
+26 silly audit report {}
+27 http fetch GET 200 https://registry.npmjs.org/prettier/-/prettier-3.3.3.tgz 1084ms (cache miss)
+28 verbose cwd /home/container
+29 verbose os Linux 5.15.0-113-generic
+30 verbose node v20.17.0
+31 verbose npm  v10.8.3
+32 verbose exit 0
+33 info ok

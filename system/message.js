@@ -15,6 +15,8 @@ import { fileURLToPath } from "url";
 import path, { dirname, join } from "path";
 import fs from "fs";
 import QRCode from "qrcode";
+import speed from "performance-now";
+import { sizeFormatter } from "human-readable";
 
 import {
   addResponList,
@@ -25,12 +27,6 @@ import {
   updateResponList,
   getDataResponList,
 } from "./lib/store.js";
-import MaupediaAPI from "./lib/MaupediaAPI.js";
-const maupediaAPI = new MaupediaAPI(
-  config.gateway.apikey,
-  config.gateway.apiId,
-  config.gateway.secretKey,
-);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -77,6 +73,7 @@ export default async function message(client, store, m) {
     let downloadM = async (filename) =>
       await client.downloadMediaMessage(quoted, filename);
     let isCommand = (m.prefix && m.body.startsWith(m.prefix)) || false;
+    let isCmd = m.body.startsWith(m.prefix);
 
     // mengabaikan pesan dari bot
     if (m.isBot) return;
@@ -102,7 +99,14 @@ export default async function message(client, store, m) {
       );
     }
 
-    // if (!m.isGroup && !m.isOwner) return;
+    if (!m.isGroup && !m.isOwner) {
+      if (isCommand && m.command) {
+        await m.reply(
+          `Halo kak, maaf bot ini hanya bisa digunakan di dalam grup.\n\nSilakan gabung ke grup di bawah ini untuk menggunakan bot:\n\nLink 1: https://chat.whatsapp.com/LC5hrnREBkF7kEpOBWdzZv\nLink 2: https://chat.whatsapp.com/JC7QOgfV0lF6c6XsxTwAID`,
+        );
+        return;
+      }
+    }
 
     // database JSON
     const db_respon_list = JSON.parse(
@@ -128,11 +132,19 @@ export default async function message(client, store, m) {
       }
     }
 
+    const formatp = sizeFormatter({
+      std: "JEDEC",
+      decimalPlaces: 2,
+      keepTrailingZeroes: false,
+      render: (literal, symbol) => `${literal} ${symbol}B`,
+    });
+
     const menus = {
-      download: ["tiktok"],	
+      info: ["script", "runtime", "owner", "ping"],
+      download: ["tiktok"],
       group: ["hidetag", "group", "promote", "demote", "link", "delete"],
       store: ["shop", "addlist", "dellist", "updatelist"],
-      owner: ["backup", "setwelcome", "$", ">"]
+      owner: ["backup", "setwelcome", "$", ">"],
     };
 
     const more = String.fromCharCode(8206);
@@ -187,7 +199,7 @@ export default async function message(client, store, m) {
           if (action) {
             teks += `\n\n${readMore}`;
             teks += `\`</> ${Func.ucword(m.args[0])} Feature </>\`\n\n`;
-            teks += action.map((item) => `> ${m.prefix + item}`).join("\n");
+            teks += action.map((item) => `• ${m.prefix + item}`).join("\n");
 
             teks += `\n\n${config.wm}`;
 
@@ -228,39 +240,51 @@ export default async function message(client, store, m) {
           }
         }
         break;
-        
-      // batas 
-      // downloader 
+
+      // batas
+      // downloader
       case "tt":
-      case "tiktok": 
+      case "tiktok":
         {
-          if (!m.text) return m.reply(`[!] Silahkan masukan url tiktok.`)	
-          let url = Func.isUrl(m.text)[0]
-          
-          await m.reply("Tunggu Sebentar ya kak")
-          
+          if (!m.text) return m.reply(`[!] Silahkan masukan url tiktok.`);
+          let url = Func.isUrl(m.text)[0];
+
+          await m.reply("Tunggu Sebentar ya kak");
+
           try {
-            const response = await Func.fetchJson(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`)
-            
-            if (response.images?.length) return m.reply("Maap Kak image belum support ya.")
-            
-            const caption = `*</> TikTok Download </>*\n\n`
-            + ` • ID: ${response.id}\n`
-            + ` • Title: ${response.title}\n`
-            + ` • Author: ${response.author?.name} (@${response.author?.unique_id})\n`
-            + ` • Music: ${response.music?.title} by ${response.music?.author}\n`
-            + ` • Duration: ${response.video?.durationFormatted}\n`
-            + ` • Stats: ${response.stats?.likeCount} likes, ${response.stats?.commentCount} comments, ${response.stats?.shareCount} shares\n\n`
-            + `${config.wm}`
-          
-            await client.sendMessage(m.from, { video: { url: response.video?.noWatermark }, caption, mimetype: "video/mp4"}, { quoted: m });
+            const response = await Func.fetchJson(
+              `https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`,
+            );
+
+            if (response.images?.length)
+              return m.reply("Maap Kak image belum support ya.");
+
+            const caption =
+              `*</> TikTok Download </>*\n\n` +
+              ` • ID: ${response.id}\n` +
+              ` • Title: ${response.title}\n` +
+              ` • Author: ${response.author?.name} (@${response.author?.unique_id})\n` +
+              ` • Music: ${response.music?.title} by ${response.music?.author}\n` +
+              ` • Duration: ${response.video?.durationFormatted}\n` +
+              ` • Stats: ${response.stats?.likeCount} likes, ${response.stats?.commentCount} comments, ${response.stats?.shareCount} shares\n\n` +
+              `${config.wm}`;
+
+            await client.sendMessage(
+              m.from,
+              {
+                video: { url: response.video?.noWatermark },
+                caption,
+                mimetype: "video/mp4",
+              },
+              { quoted: m },
+            );
           } catch (e) {
-            console.log(e)
-            m.reply("Maap kak seperti nya sedang error.")
+            console.log(e);
+            m.reply("Maap kak seperti nya sedang error.");
           }
         }
-        break
-      // batas 
+        break;
+      // batas
 
       case "hd":
       case "remini":
@@ -357,7 +381,7 @@ export default async function message(client, store, m) {
           }
         }
         break;
-        
+
       case "open":
       case "close":
         {
@@ -368,7 +392,7 @@ export default async function message(client, store, m) {
             open: "not_announcement",
             close: "announcement",
           }[m.command || ""];
-          
+
           await client.groupSettingUpdate(m.from, isClose);
 
           if (m.command === "close") {
@@ -382,7 +406,7 @@ export default async function message(client, store, m) {
           }
         }
         break;
-        
+
       case "demote":
       case "promote":
         {
@@ -458,21 +482,21 @@ export default async function message(client, store, m) {
               });
             }
           });
-            
-            arr_rows.sort((a, b) => a.title.localeCompare(b.title));
-            
+
+          arr_rows.sort((a, b) => a.title.localeCompare(b.title));
+
           let teks = `Hai @${m.sender.split("@")[0]}\nBerikut list item yang tersedia di group ini!\n\nSilahkan pilih produk yang diinginkan!`;
 
           const sections = [
-              {
-                 title: "Main",
-                  rows: [
-                      {
-                          title: "Payment Method",
-                          id: "Payment"
-                      }
-                  ]
-              },
+            {
+              title: "Main",
+              rows: [
+                {
+                  title: "Payment Method",
+                  id: "Payment",
+                },
+              ],
+            },
             {
               title: "List Produk",
               rows: arr_rows,
@@ -687,6 +711,62 @@ export default async function message(client, store, m) {
           m.reply(`Pesan sambutan untuk grup ${m.from} telah disimpan.`);
         }
         break;
+
+      case "kalkulator":
+        {
+          let q = m.text;
+          if (!m.text)
+            return m.reply(
+              `Contoh: ${m.prefix + m.command} + 5 6\n\nList kalkulator:\n+\n-\n÷\n×`,
+            );
+          if (m.text.split(" ")[0] == "+") {
+            let q1 = Number(q.split(" ")[1]);
+            let q2 = Number(q.split(" ")[2]);
+            m.reply(`${q1 + q2}`);
+          } else if (q.split(" ")[0] == "-") {
+            let q1 = Number(q.split(" ")[1]);
+            let q2 = Number(q.split(" ")[2]);
+            m.reply(`${q1 - q2}`);
+          } else if (q.split(" ")[0] == "÷") {
+            let q1 = Number(q.split(" ")[1]);
+            let q2 = Number(q.split(" ")[2]);
+            m.reply(`${q1 / q2}`);
+          } else if (q.split(" ")[0] == "×") {
+            let q1 = Number(q.split(" ")[1]);
+            let q2 = Number(q.split(" ")[2]);
+            m.reply(`${q1 * q2}`);
+          }
+        }
+        break;
+
+      // Fitur Main -_
+      case "script":
+      case "sc":
+        m.reply(
+          `https://github.com/Arifzyn19/Bot-WhatsApp-Store\nDon't Forget To Star`,
+        );
+        break;
+
+      case "owner":
+        await client.sendContact(m.from, config.owner, m);
+        break;
+
+      case "tes":
+      case "runtime":
+        m.reply(
+          `*STATUS : BOT ONLINE🥰*\n_Runtime : ${runtime(process.uptime())}_`,
+        );
+        break;
+
+      case "ping":
+        let os = await import("os");
+        let timestamp = speed();
+        let latensi = speed() - timestamp;
+        m.reply(
+          `Kecepatan respon _${latensi.toFixed(4)} Second_\n\n*💻 INFO SERVER*\nHOSTNAME: ${os.hostname}\nRAM: ${formatp(os.totalmem() - os.freemem())} / ${formatp(os.totalmem())}`,
+        );
+        break;
+
       default:
         if (
           [">", "eval", "=>"].some((a) =>
@@ -735,6 +815,7 @@ export default async function message(client, store, m) {
         }
     }
   } catch (err) {
+    client.sendMessage(m.from, { text: util.format(err) });
     console.error(err);
   }
 }

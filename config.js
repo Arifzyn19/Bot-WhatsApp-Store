@@ -8,7 +8,8 @@ const __dirname = dirname(__filename);
 const config = {
   pairing: "628195107972",
 
-  owner: ["6285691464024", "6287891540792"],
+  ownerNumber: ["6287891540792", ""],
+  owner: ["6285888362486", "6285691464024", "6287891540792"],
   wm: "Fairy Moon © 2023",
 
   self: false,

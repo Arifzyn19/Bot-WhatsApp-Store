@@ -73,8 +73,7 @@ export default async function message(client, store, m) {
     let downloadM = async (filename) =>
       await client.downloadMediaMessage(quoted, filename);
     let isCommand = (m.prefix && m.body.startsWith(m.prefix)) || false;
-    let isCmd = m.body.startsWith(m.prefix);
-
+    
     // mengabaikan pesan dari bot
     if (m.isBot) return;
 
@@ -531,13 +530,13 @@ export default async function message(client, store, m) {
 
           if (/image|video/i.test(quoted.msg.mimetype)) {
             const media = await downloadM();
-            const url_media = await Func.upload.telegra(media);
+            const url_media = await Func.upload.pomf(media);
             addResponList(
               m.from,
               args1,
               args2,
               true,
-              "https://telegra.ph" + url_media,
+              url_media,
               db_respon_list,
             );
             m.reply(`Berhasil menambah List menu : *${args1}*`);
@@ -584,13 +583,13 @@ export default async function message(client, store, m) {
 
           if (/image|video/i.test(quoted.msg.mimetype)) {
             const media = await downloadM();
-            const url_media = await Func.upload.telegra(media);
+            const url_media = await Func.upload.pomf(media);
             updateResponList(
               m.from,
               args1,
               args2,
               true,
-              "https://telegra.ph" + url_media,
+              url_media,
               db_respon_list,
             );
             m.reply(`Sukses update respon list dengan key *${args1}*`);
@@ -802,15 +801,16 @@ export default async function message(client, store, m) {
           m.isOwner
         ) {
           let o;
-
+          const execPromise = util.promisify(exec);
+          
           try {
-            o = await exec(m.text);
+            o = await execPromise(m.text);
           } catch (e) {
             o = e;
           } finally {
             let { stdout, stderr } = o;
-            if (typeof stdout === "string" && stdout.trim()) m.reply(stdout);
-            if (typeof stderr === "string" && stderr.trim()) m.reply(stderr);
+            if (typeof stdout === "string" && stdout.trim()) m.reply(stdout.trim());
+            if (typeof stderr === "string" && stderr.trim()) m.reply(stderr.trim());
           }
         }
     }

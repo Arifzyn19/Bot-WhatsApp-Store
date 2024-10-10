@@ -34,32 +34,6 @@ const __dirname = dirname(__filename);
 import Database from "simple-json-db";
 
 const db = new Database(path.join(__dirname, "database", "database.json"));
-const db_deposit = new Database(
-  path.join(__dirname, "database", "db_deposit.json"),
-);
-
-function findSenderByTrxid(trxid, _db) {
-  for (let sender in _db) {
-    for (let deposit of _db[sender]) {
-      if (deposit.trxid === trxid) {
-        return sender;
-      }
-    }
-  }
-  return null;
-}
-
-function toRupiah(amount) {
-  if (isNaN(amount)) {
-    throw new Error("Invalid number");
-  }
-
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-}
 
 /**
  *
@@ -145,7 +119,7 @@ export default async function message(client, store, m) {
       store: ["shop", "addlist", "dellist", "updatelist"],
       owner: ["backup", "setwelcome", "$", ">"],
     };
-
+ 
     const more = String.fromCharCode(8206);
     const readMore = more.repeat(4001);
 
@@ -175,7 +149,14 @@ export default async function message(client, store, m) {
         },
       },
     };
-
+    
+    // db games 
+    client.tebakkata = client.tebakkata ? client.tebakkata : {};
+    
+    if (m.isGroup && m.from in client.tebakkata) {
+       	
+    }
+    
     // command
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
@@ -485,14 +466,15 @@ export default async function message(client, store, m) {
           arr_rows.sort((a, b) => a.title.localeCompare(b.title));
 
           let teks = `Hai @${m.sender.split("@")[0]}\nBerikut list item yang tersedia di group ini!\n\nSilahkan pilih produk yang diinginkan!`;
-
+          let groupId = "120363286011266058@g.us";
+          
           const sections = [
             {
               title: "Main",
               rows: [
                 {
                   title: "Payment Method",
-                  id: "Payment",
+                  id: m.chat === groupId ? "Payment" : "PAYMENT",
                 },
               ],
             },

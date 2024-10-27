@@ -320,8 +320,8 @@ export default async function message(client, store, m) {
           let mod = await client.cMod(
             m.from,
             quoted,
-            /hidetag|tag|ht|h|totag/i.test(quoted.body.toLowerCase())
-              ? quoted.body.toLowerCase().replace(m.prefix + m.command, "")
+            /hidetag|tag|ht|h|totag/i.test(quoted.body)
+              ? quoted.body.replace(m.prefix + m.command, "")
               : quoted.body,
           );
           client.sendMessage(
@@ -735,10 +735,10 @@ export default async function message(client, store, m) {
       case "tes":
       case "runtime":
         m.reply(
-          `*STATUS : BOT ONLINE🥰*\n_Runtime : ${runtime(process.uptime())}_`,
+          `*STATUS : BOT ONLINE🥰*\n_Runtime : ${Func.runtime(process.uptime())}_`,
         );
         break;
-
+        
       case "ping":
         let os = await import("os");
         let timestamp = speed();

@@ -8,10 +8,12 @@ import { exec } from "child_process";
 import * as Func from "./lib/function.js";
 import Color from "./lib/color.js";
 import serialize, { getContentType } from "./lib/serialize.js";
+import { writeExif } from "./lib/sticker.js";
 
 import { ai } from "./scraper/ai.js";
 
 import { fileURLToPath } from "url";
+import axios from "axios";
 import path, { dirname, join } from "path";
 import fs from "fs";
 import QRCode from "qrcode";
@@ -47,7 +49,7 @@ export default async function message(client, store, m) {
     let downloadM = async (filename) =>
       await client.downloadMediaMessage(quoted, filename);
     let isCommand = (m.prefix && m.body.startsWith(m.prefix)) || false;
-    
+
     // mengabaikan pesan dari bot
     if (m.isBot) return;
 
@@ -117,9 +119,10 @@ export default async function message(client, store, m) {
       download: ["tiktok"],
       group: ["hidetag", "group", "promote", "demote", "link", "delete"],
       store: ["shop", "addlist", "dellist", "updatelist"],
+      sticker: ["sticker", "qc"],
       owner: ["backup", "setwelcome", "$", ">"],
     };
- 
+
     const more = String.fromCharCode(8206);
     const readMore = more.repeat(4001);
 
@@ -149,14 +152,13 @@ export default async function message(client, store, m) {
         },
       },
     };
-    
-    // db games 
+
+    // db games
     client.tebakkata = client.tebakkata ? client.tebakkata : {};
-    
+
     if (m.isGroup && m.from in client.tebakkata) {
-       	
     }
-    
+
     // command
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
@@ -467,7 +469,7 @@ export default async function message(client, store, m) {
 
           let teks = `Hai @${m.sender.split("@")[0]}\nBerikut list item yang tersedia di group ini!\n\nSilahkan pilih produk yang diinginkan!`;
           let groupId = "120363286011266058@g.us";
-          
+
           const sections = [
             {
               title: "Main",
@@ -626,7 +628,6 @@ export default async function message(client, store, m) {
 
       case "sticker":
       case "s":
-        const { writeExif } = await import("./lib/sticker.js");
         if (/image|video|webp/.test(quoted.msg.mimetype)) {
           let media = await downloadM();
           if (quoted.msg?.seconds > 10)
@@ -668,6 +669,74 @@ export default async function message(client, store, m) {
           }
         } else m.reply("Send or reply image/video");
         break;
+      case "qc":
+      case "quote":
+        {
+          let linkppuserp;
+          try {
+            linkppuserp = await client.profilePictureUrl(m.sender, "image");
+          } catch {
+            linkppuserp = "https://telegra.ph/file/e323980848471ce8e2150.png";
+          }
+
+          const getname = await client.getName(m.sender);
+          const text = quoted ? quoted.text : m.text;
+
+          if (!text) {
+            m.reply(
+              `Kirim perintah ${command} text atau reply pesan dengan perintah ${command}`,
+            );
+            break;
+          }
+
+          const json = {
+            type: "quote",
+            format: "png",
+            background: "#ffff",
+            backgroundColor: "#1F2937", // Dark background color
+            width: 512,
+            height: 768,
+            scale: 2,
+            messages: [
+              {
+                entities: [],
+                avatar: true,
+                from: {
+                  id: 1,
+                  name: getname,
+                  photo: {
+                    url: linkppuserp,
+                  },
+                },
+                text: text,
+                replyMessage: {},
+              },
+            ],
+          };
+
+          try {
+            const response = await axios.post(
+              "https://bot.lyo.su/quote/generate",
+              json,
+              {
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+            const buffer = Buffer.from(response.data.result.image, "base64");
+
+            const sticker = await writeExif(
+              { mimetype: "image/pmg", data: buffer },
+              { ...config.exif },
+            );
+
+            await client.sendMessage(m.from, { sticker }, { quoted: m });
+          } catch (error) {
+            m.reply("error");
+            console.error("Error generating quote:", error);
+          }
+        }
+        break;
+
       case "setwelcome":
         {
           if (!m.isGroup) {
@@ -738,7 +807,7 @@ export default async function message(client, store, m) {
           `*STATUS : BOT ONLINE🥰*\n_Runtime : ${Func.runtime(process.uptime())}_`,
         );
         break;
-        
+
       case "ping":
         let os = await import("os");
         let timestamp = speed();
@@ -784,15 +853,17 @@ export default async function message(client, store, m) {
         ) {
           let o;
           const execPromise = util.promisify(exec);
-          
+
           try {
             o = await execPromise(m.text);
           } catch (e) {
             o = e;
           } finally {
             let { stdout, stderr } = o;
-            if (typeof stdout === "string" && stdout.trim()) m.reply(stdout.trim());
-            if (typeof stderr === "string" && stderr.trim()) m.reply(stderr.trim());
+            if (typeof stdout === "string" && stdout.trim())
+              m.reply(stdout.trim());
+            if (typeof stderr === "string" && stderr.trim())
+              m.reply(stderr.trim());
           }
         }
     }

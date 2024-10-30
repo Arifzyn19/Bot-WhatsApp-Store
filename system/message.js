@@ -679,21 +679,58 @@ export default async function message(client, store, m) {
             linkppuserp = "https://telegra.ph/file/e323980848471ce8e2150.png";
           }
 
+          const colors = {
+            red: "#FF0000",
+            green: "#00FF00",
+            blue: "#0000FF",
+            yellow: "#FFFF00",
+            cyan: "#00FFFF",
+            magenta: "#FF00FF",
+            black: "#000000",
+            white: "#FFFFFF",
+            orange: "#FFA500",
+            purple: "#800080",
+            pink: "#FFC0CB",
+            brown: "#A52A2A",
+            gray: "#808080",
+            navy: "#000080",
+            gold: "#FFD700",
+            silver: "#C0C0C0",
+            lime: "#00FF00",
+            olive: "#808000",
+            maroon: "#800000",
+            teal: "#008080",
+            coral: "#FF7F50",
+            salmon: "#FA8072",
+            beige: "#F5F5DC",
+            ivory: "#FFFFF0",
+            lavender: "#E6E6FA",
+            turquoise: "#40E0D0",
+          };
+
           const getname = await client.getName(m.sender);
-          const text = quoted ? quoted.text : m.text;
+
+          // Pisahkan input berdasarkan "|"
+          const input = m.text.split("|");
+          const text = input[0] ? input[0].trim() : null; // Ambil teks sebelum "|"
+          const selectedColor = input[1]
+            ? input[1].trim().toLowerCase()
+            : "white"; // Ambil warna setelah "|"
 
           if (!text) {
             m.reply(
-              `Kirim perintah ${command} text atau reply pesan dengan perintah ${command}`,
+              `Kirim perintah ${m.prefix + m.command} text | color atau reply pesan dengan perintah ${m.command}`,
             );
             break;
           }
+
+          const backgroundColor = colors[selectedColor] || "#FFFFFF"; // Gunakan warna dari input atau default ke putih
 
           const json = {
             type: "quote",
             format: "png",
             background: "#ffff",
-            backgroundColor: "#1F2937", // Dark background color
+            backgroundColor: backgroundColor, // Warna dari input
             width: 512,
             height: 768,
             scale: 2,
@@ -725,7 +762,7 @@ export default async function message(client, store, m) {
             const buffer = Buffer.from(response.data.result.image, "base64");
 
             const sticker = await writeExif(
-              { mimetype: "image/pmg", data: buffer },
+              { mimetype: "image/png", data: buffer },
               { ...config.exif },
             );
 
@@ -736,7 +773,6 @@ export default async function message(client, store, m) {
           }
         }
         break;
-
       case "setwelcome":
         {
           if (!m.isGroup) {

@@ -455,41 +455,36 @@ export default async function message(client, store, m) {
               `Belum ada list message yang terdaftar di group ini`,
             );
 
-          var arr_rows = [];
-          db_respon_list.forEach((x, i) => {
-            if (x.id === m.from) {
-              arr_rows.push({
-                title: `ᯓ★ ${x.key}`,
-                id: x.key,
-              });
-            }
+          const groupItems = db_respon_list
+            .filter((x) => x.id === m.from)
+            .sort((a, b) => a.key.localeCompare(b.key));
+
+          let message = `╭━━━━━『 DAFTAR PRODUK 』━━━━━╮\n`;
+          message += `║ Hai kak @${m.sender.split("@")[0]} 👋\n`;
+          message += `║ Berikut daftar produk yang tersedia:\n`;
+          message += `╰───────────────────╯\n\n`;
+
+          message += `╭━━━━『 PAYMENT METHOD 』━━━━╮\n`;
+          message += `║ Ketik *Payment* untuk melihat\n`;
+          message += `║ metode pembayaran yang tersedia\n`;
+          message += `╰───────────────────╯\n\n`;
+
+          message += `╭━━━━『 LIST PRODUK 』━━━━╮\n`;
+          groupItems.forEach((item, index) => {
+            message += `║ ${index + 1}. ${item.key}\n`;
           });
+          message += `╰───────────────────╯\n\n`;
 
-          arr_rows.sort((a, b) => a.title.localeCompare(b.title));
+          message += `Silahkan ketik nama produk yang diinginkan!`;
 
-          let teks = `Hai @${m.sender.split("@")[0]}\nBerikut list item yang tersedia di group ini!\n\nSilahkan pilih produk yang diinginkan!`;
-          let groupId = "120363286011266058@g.us";
-
-          const sections = [
+          await client.sendMessage(
+            m.from,
             {
-              title: "Main",
-              rows: [
-                {
-                  title: "Payment Method",
-                  id: m.chat === groupId ? "Payment" : "PAYMENT",
-                },
-              ],
+              text: message,
+              mentions: [m.sender],
             },
-            {
-              title: "List Produk",
-              rows: arr_rows,
-            },
-          ];
-          await client.sendListM(m.from, teks, config.wm, null, sections, m, {
-            contextInfo: {
-              mentionedJid: [m.sender],
-            },
-          });
+            { quoted: fkontak },
+          );
         }
         break;
 

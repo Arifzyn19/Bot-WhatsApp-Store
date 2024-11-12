@@ -87,6 +87,8 @@ export default async function message(client, store, m) {
     const db_respon_list = JSON.parse(
       fs.readFileSync(path.join(__dirname, "./database/store.json")),
     );
+    let shop_categories = new Map(); // Menyimpan kategori produk
+    let order_history = new Map(); // Menyimpan riwayat pesanan
 
     if (m.isGroup && isAlreadyResponList(m.from, m.body, db_respon_list)) {
       var get_data_respon = getDataResponList(m.from, m.body, db_respon_list);
@@ -153,95 +155,230 @@ export default async function message(client, store, m) {
       },
     };
 
-    // db games
-    client.tebakkata = client.tebakkata ? client.tebakkata : {};
-
-    if (m.isGroup && m.from in client.tebakkata) {
-    }
-
     // command
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
         {
-          let teks = `╭━━━━━━━━━━━━━━━━━━━━╮
-┃      *FAIRY MOON BOT*      
-┃━━━━━━━━━━━━━━━━━━━━
+          const menu_db = db.get("menus") || {};
+
+          const teksHeader =
+            (menu_db[m.from] && menu_db[m.from].text) ||
+            `╭═══════════════════════╮
+┃    🌟 *FAIRY MOON BOT* 🌟    
+╰═══════════════════════╯
+╭═══════════════════════
 ┃ 👋 Hai kak @${m.sender.split("@")[0]}
 ┃
 ┃ 🌙 Selamat Datang di 
 ┃    Fairy Moon Bot Store! ✨
+┃ 
+┃ 📱 Status Bot: Online
+┃ ⏰ Runtime: ${Func.runtime(process.uptime())}
+┃ 🔋 Battery: ${global.battery || "Tidak terdeteksi"}
+┃ 📅 Tanggal: ${Func.dateComplete()}
+┃ ⌚ Waktu: ${Func.clockString(new Date())}
 ┃
-┃ 🎮 Dapatkan kebutuhan game 
-┃    Anda dengan cepat & mudah
-╰━━━━━━━━━━━━━━━━━━━━╯`;
+┃ 👑 Owner: FairyMoon 
+╰═══════════════════════`;
+
+          const imageUrl =
+            (menu_db[m.from] && menu_db[m.from].image) ||
+            "https://telegra.ph/file/2d0dfe9003e8c012b1ffe.jpg";
+
+          let teks = teksHeader
+            .replace(/@user/g, `@${m.sender.split("@")[0]}`)
+            .replace(/@group/g, (await client.getName(m.from)) || "Grup")
+            .replace(/@desc/g, m.metadata.desc || "Tidak ada deskripsi")
+            .replace(/@date/g, Func.dateComplete())
+            .replace(/@time/g, Func.clockString(new Date()));
 
           const action = menus[m.args[0]];
+
           if (action) {
-            teks += `\n${readMore}\n`;
-            teks += `╭━━━━━━━━━━━━━━━━━━━━╮
-┃    *${Func.ucword(m.args[0])} MENU*    
-┃━━━━━━━━━━━━━━━━━━━━\n`;
+            teks += `\n${readMore}\n╭═══════════════════════╮\n┃    💫 *${Func.ucword(m.args[0])} MENU* 💫    \n╰═══════════════════════╯\n╭═══════════════════════\n`;
 
             action.forEach((item, index) => {
-              teks += `┃ ${index + 1}. ${m.prefix + item}\n`;
+              teks += `┃ ${index + 1}. ${item}\n`;
             });
 
-            teks += `╰━━━━━━━━━━━━━━━━━━━━╯\n\n`;
+            teks += `╰═══════════════════════\n\n`;
+            teks += `✨ *Note:* Gunakan ${m.prefix}help [command] untuk\ndetail penggunaan setiap perintah\n\n`;
             teks += `${config.wm}`;
-
-            await client.sendMessage(
-              m.from,
-              {
-                text: teks,
-                contextInfo: {
-                  mentionedJid: client.parseMention(teks),
-                  externalAdReply: {
-                    showAdAttribution: true,
-                    title: "Selamat datang...",
-                    body: config.wm,
-                    thumbnailUrl:
-                      "https://telegra.ph/file/2d0dfe9003e8c012b1ffe.jpg",
-                    sourceUrl: "",
-                    mediaType: 1,
-                    renderLargerThumbnail: true,
-                  },
-                },
-              },
-              { quoted: ftextt },
-            );
           } else {
-            teks += `\n${readMore}\n`;
-            teks += `╭━━━━━━━━━━━━━━━━━━━━╮
-┃       *DAFTAR MENU*       
-┃━━━━━━━━━━━━━━━━━━━━\n`;
+            teks += `\n${readMore}\n╭═══════════════════════╮\n┃    📑 *DAFTAR MENU* 📑    \n╰═══════════════════════╯\n╭═══════════════════════\n`;
 
             Object.keys(menus).forEach((category, index) => {
-              teks += `┃ ${index + 1}. ${m.prefix}menu ${category}\n`;
+              const categoryEmojis = {
+                main: "🎯",
+                game: "🎮",
+                rpg: "⚔️",
+                exp: "📊",
+                limit: "🔋",
+                sticker: "🎨",
+                owner: "👑",
+                group: "👥",
+                convert: "🔄",
+                download: "📥",
+                search: "🔍",
+                anime: "🎭",
+                fun: "🎪",
+                database: "💾",
+                tools: "🛠️",
+                islamic: "🕌",
+                info: "ℹ️",
+              };
+              const emoji = categoryEmojis[category] || "📌";
+              teks += `┃ ${index + 1}. ${emoji} ${m.prefix}menu ${category}\n`;
             });
 
-            teks += `╰━━━━━━━━━━━━━━━━━━━━╯\n\n`;
-            teks += `Ketik *${m.prefix}menu [nama menu]* untuk\nmelihat detail menu yang tersedia\n\n`;
+            teks += `╰═══════════════════════\n\n`;
+            teks += `🔰 Ketik *${m.prefix}menu [nama menu]* untuk\nmelihat detail menu yang tersedia\n\n`;
+            teks += `💡 Tips: Gunakan bot dengan bijak!\n\n`;
             teks += `${config.wm}`;
+          }
 
-            await client.sendMessage(
-              m.from,
-              {
-                text: teks,
-                contextInfo: {
-                  mentionedJid: client.parseMention(teks),
-                  externalAdReply: {
-                    showAdAttribution: true,
-                    title: "Selamat datang...",
-                    body: config.wm,
-                    thumbnailUrl:
-                      "https://telegra.ph/file/2d0dfe9003e8c012b1ffe.jpg",
-                    sourceUrl: "",
-                    mediaType: 1,
-                    renderLargerThumbnail: true,
-                  },
+          await client.sendMessage(
+            m.from,
+            {
+              text: teks,
+              contextInfo: {
+                mentionedJid: client.parseMention(teks),
+                externalAdReply: {
+                  showAdAttribution: true,
+                  title: "✨ Selamat datang di Fairy Moon Bot!",
+                  body: config.wm,
+                  thumbnailUrl: imageUrl,
+                  sourceUrl: "",
+                  mediaType: 1,
+                  renderLargerThumbnail: true,
                 },
               },
-              { quoted: ftextt },
+            },
+            { quoted: ftextt },
+          );
+        }
+        break;
+
+      case "setmenu":
+        {
+          if (!m.isGroup) {
+            return client.sendMessage(
+              m.from,
+              {
+                text: "❌ Perintah ini hanya dapat digunakan dalam grup!",
+              },
+              { quoted: m },
+            );
+          }
+
+          if (!m.isAdmin && !m.isOwner) {
+            return client.sendMessage(
+              m.from,
+              {
+                text: "❌ Perintah ini hanya dapat digunakan oleh admin grup atau owner bot!",
+              },
+              { quoted: m },
+            );
+          }
+
+          const [menuText, imageUrl] = m.args.join(" ").split("|");
+
+          if (!menuText || !imageUrl) {
+            return client.sendMessage(
+              m.from,
+              {
+                text: `❌ Format salah! 
+            
+Gunakan format: 
+${m.prefix}setmenu teks|imageurl
+
+Variabel yang tersedia:
+• @user - Untuk mention user
+• @group - Untuk nama grup
+• @desc - Untuk deskripsi grup
+• @date - Untuk tinggal 
+• @time - Untuk waktu 
+
+Contoh:
+${m.prefix}setmenu Selamat datang @user di @group!|https://example.com/image.jpg`,
+              },
+              { quoted: m },
+            );
+          }
+
+          if (!imageUrl.match(/^https?:\/\/.+\.(jpg|jpeg|png|gif)$/i)) {
+            return client.sendMessage(
+              m.from,
+              {
+                text: "❌ URL gambar tidak valid! Pastikan URL berakhiran .jpg, .jpeg, .png, atau .gif",
+              },
+              { quoted: m },
+            );
+          }
+
+          const menu_db = db.get("menus") || {};
+
+          if (!menu_db[m.from]) {
+            menu_db[m.from] = {};
+          }
+
+          menu_db[m.from].text = menuText.trim();
+          menu_db[m.from].image = imageUrl.trim();
+
+          db.set("menus", menu_db);
+
+          const groupName = await client.getName(m.from);
+          const groupDesc = m.metadata.desc;
+
+          const previewText = menuText
+            .trim()
+            .replace(/@user/g, `@${m.sender.split("@")[0]}`)
+            .replace(/@group/g, groupName || "Grup")
+            .replace(/@desc/g, groupDesc || "Tidak ada deskripsi")
+            .replace(/@date/g, Func.dateComplete())
+            .replace(/@time/g, Func.clockString(new Date()));
+
+          await client.sendMessage(
+            m.from,
+            {
+              text: `✅ Menu berhasil diatur!\n\nPreview:\n${previewText}`,
+              contextInfo: {
+                mentionedJid: client.parseMention(previewText),
+                externalAdReply: {
+                  showAdAttribution: true,
+                  title: "Preview Menu",
+                  body: config.wm,
+                  thumbnailUrl: imageUrl.trim(),
+                  sourceUrl: "",
+                  mediaType: 1,
+                  renderLargerThumbnail: true,
+                },
+              },
+            },
+            { quoted: m },
+          );
+        }
+        break;
+
+      case "deletemenu":
+        {
+          const menu_db = db.get("menus") || {};
+
+          if (menu_db[m.from]) {
+            delete menu_db[m.from];
+            db.set("menus", menu_db);
+            client.sendMessage(
+              m.from,
+              {
+                text: "Menu untuk grup ini berhasil dihapus dan dikembalikan ke pengaturan default!",
+              },
+              { quoted: m },
+            );
+          } else {
+            client.sendMessage(
+              m.from,
+              { text: "Tidak ada menu yang di-set untuk grup ini." },
+              { quoted: m },
             );
           }
         }
@@ -483,7 +620,7 @@ export default async function message(client, store, m) {
             .filter((x) => x.id === m.from)
             .sort((a, b) => a.key.localeCompare(b.key));
 
-          let message = `∧,,,∧\n`;
+          let message = ` ∧,,,∧\n`;
           message += `(  ̳• · • ̳)\n`;
           message += `/    づ♡•---------••---------••---------••---------•\n`;
           message += `┆︎𝐇𝐚𝐢 𝐤𝐚 @${m.sender.split("@")[0]}\n`;
@@ -812,7 +949,6 @@ export default async function message(client, store, m) {
 
           const welcome_db = db.get("welcome") || {};
 
-          // Menyimpan pesan sambutan dengan ID grup sebagai kunci
           welcome_db[m.from] = m.text;
           db.set("welcome", welcome_db);
 

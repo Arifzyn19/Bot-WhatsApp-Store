@@ -11,6 +11,43 @@ export function ucword(str) {
   });
 }
 
+export function dateComplete() {
+  const months = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
+
+  const date = new Date();
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
+}
+
+export function clockString(date) {
+  const options = {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  };
+  const formatter = new Intl.DateTimeFormat("id-ID", options);
+  const formattedTime = formatter.format(date);
+
+  return formattedTime;
+}
+
 export function fetchBuffer(url, options = {}) {
   return new Promise((resolve, reject) => {
     axios

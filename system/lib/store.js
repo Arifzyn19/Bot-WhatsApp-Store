@@ -21,17 +21,24 @@ function addResponList(groupID, key, response, isImage, image_url, _db) {
 
 function getDataResponList(groupID, key, _db) {
   const position = _db.findIndex(
-    (item) => item.id === groupID && item.key === key,
+    (item) =>
+      item.id === groupID && item.key.toLowerCase() === key.toLowerCase(),
   );
   return position !== -1 ? _db[position] : null;
 }
 
 function isAlreadyResponList(groupID, key, _db) {
-  return _db.some((item) => item.id === groupID && item.key === key);
+  return _db.some(
+    (item) =>
+      item.id === groupID && item.key.toLowerCase() === key.toLowerCase(),
+  );
 }
 
 function sendResponList(groupId, key, _dir) {
-  const item = _dir.find((item) => item.id === groupId && item.key === key);
+  const item = _dir.find(
+    (item) =>
+      item.id === groupId && item.key.toLowerCase() === key.toLowerCase(),
+  );
   return item ? item.response : null;
 }
 

@@ -92,7 +92,7 @@ export default async function message(client, store, m) {
       var get_data_respon = getDataResponList(m.from, m.body, db_respon_list);
       var get_response = sendResponList(m.from, m.body, db_respon_list);
 
-      if (get_data_respon.isImage === false) {
+      if (get_data_respon.image_url === "-") {
         await m.reply(get_response);
       } else {
         client.sendMessage(
@@ -163,27 +163,31 @@ export default async function message(client, store, m) {
     switch (isCommand ? m.command.toLowerCase() : false) {
       case "menu":
         {
-          let arr = new Array();
-          Object.keys(menus).forEach(function (x) {
-            arr.push({
-              title: `${Func.ucword(x)} Feature`,
-              description: `Displays menus ${Func.ucword(x)} ( List Menu )`,
-              id: `${m.prefix + m.command} ${x}`,
-            });
-          });
-
-          let teks =
-            `Hai Kak @${m.sender.split("@")[0]},\n\n` +
-            "Selamat Datang di Fairy Moon Bot Store! ✨\n" +
-            "Dapatkan kebutuhan game Anda dengan cepat dan mudah.\nKami menyediakan berbagai pilihan top-up untuk game favorit Anda.";
+          let teks = `╭━━━━━━━━━━━━━━━━━━━━╮
+┃      *FAIRY MOON BOT*      
+┃━━━━━━━━━━━━━━━━━━━━
+┃ 👋 Hai kak @${m.sender.split("@")[0]}
+┃
+┃ 🌙 Selamat Datang di 
+┃    Fairy Moon Bot Store! ✨
+┃
+┃ 🎮 Dapatkan kebutuhan game 
+┃    Anda dengan cepat & mudah
+╰━━━━━━━━━━━━━━━━━━━━╯`;
 
           const action = menus[m.args[0]];
           if (action) {
-            teks += `\n\n${readMore}`;
-            teks += `\`</> ${Func.ucword(m.args[0])} Feature </>\`\n\n`;
-            teks += action.map((item) => `• ${m.prefix + item}`).join("\n");
+            teks += `\n${readMore}\n`;
+            teks += `╭━━━━━━━━━━━━━━━━━━━━╮
+┃    *${Func.ucword(m.args[0])} MENU*    
+┃━━━━━━━━━━━━━━━━━━━━\n`;
 
-            teks += `\n\n${config.wm}`;
+            action.forEach((item, index) => {
+              teks += `┃ ${index + 1}. ${m.prefix + item}\n`;
+            });
+
+            teks += `╰━━━━━━━━━━━━━━━━━━━━╯\n\n`;
+            teks += `${config.wm}`;
 
             await client.sendMessage(
               m.from,
@@ -206,19 +210,39 @@ export default async function message(client, store, m) {
               { quoted: ftextt },
             );
           } else {
-            const sections = [
-              {
-                title: "List Menu",
-                rows: arr,
-              },
-            ];
+            teks += `\n${readMore}\n`;
+            teks += `╭━━━━━━━━━━━━━━━━━━━━╮
+┃       *DAFTAR MENU*       
+┃━━━━━━━━━━━━━━━━━━━━\n`;
 
-            await client.sendListM(m.from, teks, config.wm, null, sections, m, {
-              mentions: [m.sender],
-              contextInfo: {
-                mentionedJid: client.parseMention(teks),
-              },
+            Object.keys(menus).forEach((category, index) => {
+              teks += `┃ ${index + 1}. ${m.prefix}menu ${category}\n`;
             });
+
+            teks += `╰━━━━━━━━━━━━━━━━━━━━╯\n\n`;
+            teks += `Ketik *${m.prefix}menu [nama menu]* untuk\nmelihat detail menu yang tersedia\n\n`;
+            teks += `${config.wm}`;
+
+            await client.sendMessage(
+              m.from,
+              {
+                text: teks,
+                contextInfo: {
+                  mentionedJid: client.parseMention(teks),
+                  externalAdReply: {
+                    showAdAttribution: true,
+                    title: "Selamat datang...",
+                    body: config.wm,
+                    thumbnailUrl:
+                      "https://telegra.ph/file/2d0dfe9003e8c012b1ffe.jpg",
+                    sourceUrl: "",
+                    mediaType: 1,
+                    renderLargerThumbnail: true,
+                  },
+                },
+              },
+              { quoted: ftextt },
+            );
           }
         }
         break;
@@ -459,15 +483,18 @@ export default async function message(client, store, m) {
             .filter((x) => x.id === m.from)
             .sort((a, b) => a.key.localeCompare(b.key));
 
-          let message = `╭━━━━━『 DAFTAR PRODUK 』━━━━━╮\n`;
-          message += `║ Hai kak @${m.sender.split("@")[0]} 👋\n`;
-          message += `║ Berikut daftar produk yang tersedia:\n`;
-          message += `╰───────────────────╯\n\n`;
+          let message = `∧,,,∧\n`;
+          message += `(  ̳• · • ̳)\n`;
+          message += `/    づ♡•---------••---------••---------••---------•\n`;
+          message += `┆︎𝐇𝐚𝐢 𝐤𝐚 @${m.sender.split("@")[0]}\n`;
+          message += `┆︎Berikut daftar produk yang ada di\n`;
+          message += `┆︎${await client.getName(m.from)}\n`;
+          message += `•---------••---------••---------••---------••---------•\n`;
 
           message += `╭━━━━『 PAYMENT METHOD 』━━━━╮\n`;
           message += `║ Ketik *Payment* untuk melihat\n`;
           message += `║ metode pembayaran yang tersedia\n`;
-          message += `╰───────────────────╯\n\n`;
+          message += `╰───────────────────╯\n\n${readMore}`;
 
           message += `╭━━━━『 LIST PRODUK 』━━━━╮\n`;
           groupItems.forEach((item, index) => {

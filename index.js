@@ -1,5 +1,3 @@
-// /root/base/index.js
-
 import config from "./config.js";
 
 const {
@@ -81,13 +79,14 @@ const startSock = async () => {
   // login dengan pairing
   if (usePairingCode && !client.authState.creds.registered) {
     let phoneNumber = usePairingCode.replace(/[^0-9]/g, "");
-
-    if (!Object.keys(PHONENUMBER_MCC).some((v) => phoneNumber.startsWith(v)))
-      throw "Start with your country's WhatsApp code, Example : 62xxx";
-
-    await delay(3000);
-    let code = await client.requestPairingCode(phoneNumber);
-    console.log(`\x1b[32m${code?.match(/.{1,4}/g)?.join("-") || code}\x1b[39m`);
+    
+    setTimeout(async () => {
+      const code =
+        (await client.requestPairingCode(phoneNumber))
+          ?.match(/.{1,4}/g)
+          ?.join("-") || "";
+      console.log(`Your Pairing Code: `, color.green(code));
+    }, 3000);
   }
 
   // ngewei info, restart or close

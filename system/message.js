@@ -14,6 +14,7 @@ import { ai } from "./scraper/ai.js";
 
 import { fileURLToPath } from "url";
 import axios from "axios";
+import FormData from "form-data";
 import path, { dirname, join } from "path";
 import fs from "fs";
 import QRCode from "qrcode";
@@ -784,7 +785,85 @@ ${m.prefix}setmenu Selamat datang @user di @group!|https://example.com/image.jpg
           { mentions: [whoDone] },
         );
         break;
+case "removebg": {
+  try {
+    const isValidImage = (mime) => {
+      const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      return validTypes.includes(mime);
+    };
 
+    if (!isValidImage(quoted.msg.mimetype)) {
+      return m.reply(
+        "❌ Format tidak didukung!\n\n📝 Penggunaan:\nBalas/kirim gambar dengan caption:\n!removebg atau !remove_bg\n\n✅ Format yang didukung: JPG, JPEG, PNG, WEBP"
+      );
+    }
+
+    const processingMsg = await m.reply("⏳ Sedang memproses gambar...");
+
+    const media = await downloadM();
+    if (!media) {
+      throw new Error("Gagal mengunduh media");
+    }
+
+    const formData = new FormData();
+    formData.append('input_image', media, { filename: 'blob', contentType: 'image/jpeg' })
+
+    const config = {
+      method: "post",
+      url: "https://be-prod-1.remove-bg.ai/api/rmbg/v1",
+      data: formData,
+      headers: {
+        ...formData.getHeaders(),
+        'accept': 'application/json',
+        'author': 'Arifzyn',
+        'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpZ25vcmUiLCJwbGF0Zm9ybSI6IndlYiIsImV4cCI6MTcxOTAyMDg2OH0.QuPAsIZDvVLp9uc54y1WQ1qS2aZuJee3WWQVPzbbgR4'
+      },
+      encoding: null,
+    };
+
+    const response = await axios(config);
+    
+    if (response.status === 200) {
+      const image = Buffer.from(response.data.output, "base64");
+
+      if (processingMsg.key) {
+        await client.sendMessage(m.from, { delete: processingMsg.key });
+      } 
+
+      await client.sendMessage(
+        m.from,
+        {
+          image,
+          mimetype: "image/png",
+          caption: "✅ Background berhasil dihapus!",
+        },
+        { quoted: m }
+      );
+    } else {
+      throw new Error(`Server error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Remove BG Error:", error);
+    let errorMessage = "❌ Gagal memproses gambar. ";
+
+    if (error.response) {
+      if (error.response.status === 402) {
+        errorMessage += "API key limit tercapai, coba lagi nanti.";
+      } else if (error.response.status === 401) {
+        errorMessage += "API key tidak valid.";
+      } else {
+        errorMessage += "Terjadi kesalahan pada server.";
+      }
+    } else if (error.code === "ECONNREFUSED") {
+      errorMessage += "Tidak dapat terhubung ke server.";
+    } else {
+      errorMessage += "Silakan coba lagi nanti.";
+    }
+
+    await m.reply(errorMessage);
+  }
+}
+break;
       case "sticker":
       case "s":
         if (/image|video|webp/.test(quoted.msg.mimetype)) {

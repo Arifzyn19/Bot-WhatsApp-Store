@@ -85,75 +85,50 @@ const startSock = async () => {
         (await client.requestPairingCode(phoneNumber))
           ?.match(/.{1,4}/g)
           ?.join("-") || "";
-      console.log(`Your Pairing Code: `, color.green(code));
+      console.log(`Your Pairing Code: `, code);
     }, 3000);
   }
 
   // ngewei info, restart or close
-  client.ev.on("connection.update", (update) => {
-    const { lastDisconnect, connection, qr } = update;
+  client.ev.on("connection.update", async (update) => {
+    const { lastDisconnect, connection } = update;
+    
     if (connection) {
-      console.info(`Connection Status : ${connection}`);
+      console.info(`Connection Status: ${connection}`);
     }
 
     if (connection === "close") {
-      let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+      const statusCode = new Boom(lastDisconnect?.error)?.output.statusCode;
+      
+      // Add delay before reconnecting
+      const reconnect = async () => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await startSock();
+      };
 
-      switch (reason) {
-        case DisconnectReason.badSession:
-          console.info(`Bad Session File, Restart Required`);
-          startSock();
-          break;
-        case DisconnectReason.connectionClosed:
-          console.info("Connection Closed, Restart Required");
-          startSock();
-          break;
-        case DisconnectReason.connectionLost:
-          console.info("Connection Lost from Server, Reconnecting...");
-          startSock();
-          break;
-        case DisconnectReason.connectionReplaced:
-          console.info("Connection Replaced, Restart Required");
-          startSock();
-          break;
-        case DisconnectReason.restartRequired:
-          console.info("Restart Required, Restarting...");
-          startSock();
-          break;
+      switch (statusCode) {
         case DisconnectReason.loggedOut:
-          console.error("Device has Logged Out, please rescan again...");
-          client.end();
-          fs.rmSync(`./session`, {
-            recursive: true,
-            force: true,
-          });
-          exec("npm run stop:pm2", (err) => {
-            if (err) return treeKill(process.pid);
-          });
-          break;
         case DisconnectReason.multideviceMismatch:
-          console.error(
-            "Nedd Multi Device Version, please update and rescan again...",
-          );
-          client.end();
-          fs.rmSync(`./session`, {
-            recursive: true,
-            force: true,
-          });
-          exec("npm run stop:pm2", (err) => {
-            if (err) return treeKill(process.pid);
-          });
+          console.error("Session invalid, cleaning up...");
+          try {
+            await client.logout();
+            fs.rmSync("./session", { recursive: true, force: true });
+            process.exit(1);
+          } catch (err) {
+            console.error("Cleanup failed:", err);
+            process.exit(1);
+          }
           break;
+        
+        case DisconnectReason.connectionLost:
+          console.info("Connection lost, attempting to reconnect...");
+          await reconnect();
+          break;
+        
         default:
-          console.log("Aku ra ngerti masalah opo iki");
-          startSock();
+          console.info("Disconnected, reconnecting...");
+          await reconnect();
       }
-    }
-
-    if (connection === "open") {
-      client.sendMessage(jidNormalizedUser(client.user.id), {
-        text: `${client.user?.name} has Connected...`,
-      });
     }
   });
 
